@@ -1,49 +1,32 @@
-
-name: Aggiorna JSON da Google Sheets
+name: Aggiorna orari su Supabase
 
 on:
   workflow_dispatch:
-
   schedule:
     - cron: '*/5 * * * *'
       timezone: 'Europe/Rome'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: aggiorna-json
+  group: aggiorna-orari-supabase
   cancel-in-progress: false
 
 jobs:
-  aggiorna-json:
+  aggiorna-orari:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 5
     steps:
-      - name: Scarica repository
+      - name: Scarica il codice
         uses: actions/checkout@v6
-
       - name: Configura Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-
-      - name: Converti Google Sheets in JSON
+      - name: Importa Google Sheets in Supabase
         env:
           GOOGLE_SHEET_CSV_URL: ${{ vars.GOOGLE_SHEET_CSV_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: python esporta_json.py
-
-      - name: Aggiorna JSON nel repository
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add dati.json
-
-          if git diff --cached --quiet; then
-            echo "Nessuna modifica da salvare"
-          else
-            git commit -m "Aggiornamento automatico JSON"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
