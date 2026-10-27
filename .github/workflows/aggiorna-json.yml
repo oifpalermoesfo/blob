@@ -11,16 +11,20 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: aggiorna-json
+  cancel-in-progress: false
+
 jobs:
   aggiorna-json:
     runs-on: ubuntu-latest
 
     steps:
       - name: Scarica repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configura Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -29,7 +33,7 @@ jobs:
           GOOGLE_SHEET_CSV_URL: ${{ vars.GOOGLE_SHEET_CSV_URL }}
         run: python esporta_json.py
 
-      - name: Aggiorna file su GitHub
+      - name: Aggiorna JSON nel repository
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -40,5 +44,6 @@ jobs:
             echo "Nessuna modifica da salvare"
           else
             git commit -m "Aggiornamento automatico JSON"
-            git push
+            git pull --rebase origin main
+            git push origin HEAD:main
           fi
