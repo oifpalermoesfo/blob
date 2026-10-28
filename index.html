@@ -53,6 +53,9 @@
 
 /* Nella griglia mensile le colonne devono restare allineate */
 #monthGrid .matrix .teacher-cell{position:static;left:auto;z-index:auto;}
+
+#monthGrid .matrix .month-total{width:55px;min-width:55px;text-align:center;font-size:11px;font-weight:700;background:#eaf2fc;border-left:2px solid #b8cfe8}
+.overall-tables{display:grid;grid-template-columns:1fr 1fr;gap:18px}.overall-tables h3{margin:8px 0 10px;font-size:15px}.overall-tables .scroll{max-height:370px;overflow:auto}.overall-tables table{width:100%}.num-total{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.overall-grand td{background:#eaf2fc;font-weight:700;position:sticky;bottom:0}@media(max-width:720px){.overall-tables{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -91,6 +94,14 @@
 </div><div class="actions"><button class="btn primary" id="csv" type="button">↓ Esporta griglia CSV</button><button class="btn" id="monthPrint" type="button">Stampa</button><button class="btn" id="reset" type="button">Azzera filtri</button><button class="btn" id="reloadM" type="button">↻ Aggiorna dati</button></div></div>
 <div class="cards"><div class="stat"><div class="num" id="statHours">0</div><div class="lbl">Ore complessive</div></div><div class="stat"><div class="num" id="statClasses">0</div><div class="lbl">Classi / corsi</div></div><div class="stat"><div class="num" id="statModules">0</div><div class="lbl">Moduli</div></div><div class="stat"><div class="num" id="statTeachers">0</div><div class="lbl">Formatori</div></div></div>
 <div class="panel"><div class="heading"><h2 id="monthTitle">Griglia mensile</h2><span class="small" id="rowCount"></span></div><div id="monthGrid" class="scroll"></div><p class="small">Le celle evidenziate indicano che in quella giornata è presente almeno una lezione per la combinazione indicata. Passa il mouse per vedere gli orari oppure clicca su un giorno evidenziato per aprire il dettaglio completo.</p></div>
+</section>
+<section id="overallSummary" class="panel hidden" aria-labelledby="overallTitle">
+ <div class="heading"><h2 id="overallTitle">Riepilogo generale · tutti i mesi</h2><span class="small" id="overallInfo">Totali calcolati su tutto l’archivio, indipendenti dal mese e dai filtri</span></div>
+ <div class="overall-tables">
+  <div><h3>Totale ore per classe</h3><div class="scroll"><table class="report"><thead><tr><th>Classe / corso</th><th>Ore totali</th></tr></thead><tbody id="overallClassRows"></tbody></table></div></div>
+  <div><h3>Totale ore per modulo</h3><div class="scroll"><table class="report"><thead><tr><th>Modulo</th><th>Ore totali</th></tr></thead><tbody id="overallModuleRows"></tbody></table></div></div>
+ </div>
+ <p class="small">Ore programmate ricavate dalle fasce INIZIO–FINE; non certificano le ore effettivamente svolte. I record duplicati nell’origine vengono conteggiati.</p>
 </section><div id="dayDialog" class="day-overlay hidden" role="presentation"><section class="day-dialog" role="dialog" aria-modal="true" aria-labelledby="dayDialogTitle"><div class="day-dialog-header"><h2 id="dayDialogTitle">Dettaglio giornata</h2><button id="dayDialogClose" type="button" class="btn" aria-label="Chiudi dettaglio">✕ Chiudi</button></div><div id="dayDialogBody"></div></section></div><p class="footer">Fonte: archivio riservato Supabase · Aggiornamento da Google Sheets</p>
 </div>
 </div>
@@ -172,7 +183,7 @@ async function load(){
     $('error').classList.remove('hidden');
   }
 }
-function initialize(){const weeks=sorted(rows.map(r=>r.week));const months=sorted(rows.map(r=>r.month));const today=new Date(),current=weekStart(new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())));let nearest=weeks.filter(w=>w<=current).at(-1)||weeks[0];opt($('week'),weeks.map(x=>x),null,$('week').value||nearest);[...$('week').options].forEach(o=>o.textContent=labelWeek(o.value));let monthNow=String(today.getFullYear())+'-'+String(today.getMonth()+1).padStart(2,'0');opt($('month'),months,null,$('month').value||(months.includes(monthNow)?monthNow:months.at(-1)));[...$('month').options].forEach(o=>o.textContent=fmtMonth.format(new Date(o.value+'-01T00:00:00Z')));populateWeekFilters();populateMonthFilters();renderWeek();renderMonth();}
+function initialize(){const weeks=sorted(rows.map(r=>r.week));const months=sorted(rows.map(r=>r.month));const today=new Date(),current=weekStart(new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())));let nearest=weeks.filter(w=>w<=current).at(-1)||weeks[0];opt($('week'),weeks.map(x=>x),null,$('week').value||nearest);[...$('week').options].forEach(o=>o.textContent=labelWeek(o.value));let monthNow=String(today.getFullYear())+'-'+String(today.getMonth()+1).padStart(2,'0');opt($('month'),months,null,$('month').value||(months.includes(monthNow)?monthNow:months.at(-1)));[...$('month').options].forEach(o=>o.textContent=fmtMonth.format(new Date(o.value+'-01T00:00:00Z')));populateWeekFilters();populateMonthFilters();renderWeek();renderMonth();renderOverall();}
 $('wsite').dataset.field='site';$('mmodule').dataset.field='module';
 function populateWeekFilters(){const w=$('week').value;const wd=rows.filter(r=>r.week===w);opt($('wsite'),sorted(wd.map(r=>r.site)),'Tutte le sedi');const base=wd.filter(r=>has(r,'wsite','site'));opt($('wclass'),sorted(base.map(r=>r.class)),'Tutte le classi');}
 function populateMonthFilters(){const m=$('month').value;const ids=[['mclass','class','Tutte le classi'],['mmodule','module','Tutti i moduli'],['mteacher','teacher','Tutti i formatori']];for(const [id,key,label] of ids){const others=rows.filter(r=>r.month===m&&ids.every(([otherId,otherKey])=>otherId===id||has(r,otherId,otherKey)));opt($(id),sorted(others.map(r=>r[key])),label);}}
@@ -187,6 +198,14 @@ function monthLength(month){const [y,m]=month.split('-').map(Number);return new 
 function rangeDays(month){const len=monthLength(month);return Array.from({length:len},(_,i)=>String(i+1));}
 function dayNum(dateKey){return String(Number(dateKey.slice(8,10)));}
 function timeLabel(r){return clean(r.slot||((Number.isFinite(r.start)?String(Math.floor(r.start/60)).padStart(2,'0')+':'+String(r.start%60).padStart(2,'0'):'')+' - '+(Number.isFinite(r.end)?String(Math.floor(r.end/60)).padStart(2,'0')+':'+String(r.end%60).padStart(2,'0'):'')));}
+function renderOverall(){
+ const byClass=new Map(),byModule=new Map();let grand=0;
+ for(const r of rows){const h=r.hours||0;grand+=h;byClass.set(r.class,(byClass.get(r.class)||0)+h);byModule.set(r.module,(byModule.get(r.module)||0)+h);}
+ const toRows=(map,kind)=>[...map.entries()].sort((a,b)=>coll.compare(a[0],b[0])).map(([name,h])=>'<tr><td>'+html(kind==='module'?moduleLabel(name):name)+'</td><td class="num-total">'+html(displayHours(h))+'</td></tr>').join('');
+ $('overallClassRows').innerHTML=toRows(byClass,'class')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
+ $('overallModuleRows').innerHTML=toRows(byModule,'module')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
+ $('overallInfo').textContent=byClass.size+' classi · '+byModule.size+' moduli · '+displayHours(grand)+' ore complessive su tutti i mesi';
+}
 function renderMonth(){const selected=rows.filter(r=>r.month===$('month').value&&has(r,'mclass','class')&&has(r,'mmodule','module')&&has(r,'mteacher','teacher'));const month=$('month').value;$('monthTitle').textContent='Griglia mensile · '+(month?fmtMonth.format(new Date(month+'-01T00:00:00Z')):'');$('statHours').textContent=displayHours(selected.reduce((a,r)=>a+r.hours,0));$('statClasses').textContent=new Set(selected.map(r=>r.site+'|'+r.class)).size;$('statModules').textContent=new Set(selected.map(r=>r.module)).size;$('statTeachers').textContent=new Set(selected.map(r=>r.teacher)).size;
 if(!month){$('monthGrid').innerHTML='<div class="empty">Nessun mese disponibile.</div>';return;}
 const daysInMonth=rangeDays(month);
@@ -194,16 +213,16 @@ const groups=new Map();
 windowMonthDetails=[];
 for(const r of selected){const values=[r.class,r.teacher,r.module];const k=JSON.stringify(values);if(!groups.has(k))groups.set(k,{values,days:new Map(),hours:0,fasce:0});const g=groups.get(k);const d=dayNum(r.date);if(!g.days.has(d))g.days.set(d,[]);g.days.get(d).push(r);g.hours+=r.hours;g.fasce++;}
 const report=[...groups.values()].sort((a,b)=>{for(let i=0;i<a.values.length;i++){const c=coll.compare(a.values[i],b.values[i]);if(c)return c;}return 0;});
-lastHeaders=['Classe / corso','Formatore','Modulo',...daysInMonth];
-lastReport=report.map(g=>{const row=[g.values[0],g.values[1],moduleLabel(g.values[2])];for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);row.push(items.length?displayHours(items.reduce((sum,x)=>sum+x.hours,0)):'');}return row;});
+lastHeaders=['Classe / corso','Formatore','Modulo',...daysInMonth,'Totale ore'];
+lastReport=report.map(g=>{const row=[g.values[0],g.values[1],moduleLabel(g.values[2])];for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);row.push(items.length?displayHours(items.reduce((sum,x)=>sum+x.hours,0)):'');}row.push(displayHours(g.hours));return row;});
 $('rowCount').textContent=report.length+' righe · '+selected.length+' lezioni';
 if(!report.length){$('monthGrid').innerHTML='<div class="empty">Nessun dato per i filtri selezionati.</div>';return;}
 let out='<div class="legend"><span>Ogni cella indica le ore del giorno. Clicca per il dettaglio.</span></div><table class="matrix"><thead><tr>'+
 '<th class="col-class">Classe / corso</th><th class="col-teacher">Formatore</th><th class="col-module">Modulo</th>'+
-daysInMonth.map(d=>'<th class="day"><span class="daynum">'+d+'</span></th>').join('')+'</tr></thead><tbody>';
+daysInMonth.map(d=>'<th class="day"><span class="daynum">'+d+'</span></th>').join('')+'<th class="month-total">Totale ore</th></tr></thead><tbody>';
 for(const g of report){out+='<tr>'+'<td class="class-cell col-class" title="'+html(g.values[0])+'">'+html(g.values[0])+'</td>'+'<td class="teacher-cell col-teacher"><span class="teacher-tag '+teacherColor(g.values[1])+'">'+html(g.values[1])+'</span></td>'+'<td class="module-cell col-module" title="'+html(moduleLabel(g.values[2]))+'">'+html(moduleLabel(g.values[2]))+'</td>';
 for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);if(items.length){const tip=items.map(x=>fmtDate.format(new Date(x.date+'T00:00:00Z'))+' · '+timeLabel(x)+(x.sub?' · Supplito: '+x.sub:'')) .join('\n');const index=windowMonthDetails.push({values:g.values,items:items.slice(),date:items[0].date})-1;const ore=displayHours(items.reduce((total,r)=>total+r.hours,0));out+='<td class="day cell-active"><button type="button" class="day-button '+teacherColor(g.values[1])+'" data-day-detail="'+index+'" title="'+html(tip)+'" aria-label="Dettagli lezioni del '+html(fmtDate.format(new Date(items[0].date+'T00:00:00Z')))+' · '+html(ore)+' ore">'+html(ore)+'</button></td>';}else{out+='<td class="day"><span class="marker off">&nbsp;</span></td>';}}
-out+='</tr>';}
+out+='<td class="month-total"><strong>'+html(displayHours(g.hours))+'</strong></td></tr>';}
 out+='</tbody></table>';$('monthGrid').innerHTML=out;}
 function closeDayDialog(){ $('dayDialog').classList.add('hidden'); if(lastFocusedDay && lastFocusedDay.isConnected)lastFocusedDay.focus(); }
 let lastFocusedDay=null;
@@ -216,7 +235,7 @@ $('monthGrid').addEventListener('click',e=>{const button=e.target.closest('butto
 $('dayDialogClose').addEventListener('click',closeDayDialog);
 $('dayDialog').addEventListener('click',e=>{if(e.target===$('dayDialog'))closeDayDialog();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('dayDialog').classList.contains('hidden'))closeDayDialog();});
-function changeTab(tab){const isWeek=tab==='week';$('viewWeek').classList.toggle('hidden',!isWeek);$('viewMonth').classList.toggle('hidden',isWeek);$('tabWeek').setAttribute('aria-selected',String(isWeek));$('tabMonth').setAttribute('aria-selected',String(!isWeek));}
+function changeTab(tab){const isWeek=tab==='week';$('overallSummary').classList.toggle('hidden',isWeek);$('viewWeek').classList.toggle('hidden',!isWeek);$('viewMonth').classList.toggle('hidden',isWeek);$('tabWeek').setAttribute('aria-selected',String(isWeek));$('tabMonth').setAttribute('aria-selected',String(!isWeek));}
 $('tabWeek').addEventListener('click',()=>changeTab('week'));$('tabMonth').addEventListener('click',()=>changeTab('month'));
 $('week').addEventListener('change',()=>{populateWeekFilters();renderWeek()});$('wsite').addEventListener('change',()=>{populateWeekFilters();renderWeek()});$('wclass').addEventListener('change',renderWeek);
 for(const id of ['month','mclass','mmodule','mteacher'])$(id).addEventListener('change',()=>{populateMonthFilters();renderMonth()});
