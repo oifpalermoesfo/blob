@@ -81,6 +81,10 @@
 .overall-tables .summary-report tbody tr:nth-child(even) td{background:#f9fbfe}
 .overall-tables .summary-report .overall-grand td{position:sticky;bottom:0;z-index:2;background:#eaf2fc!important;font-weight:800;border-top:2px solid #b7cfe9}
 @media(max-width:800px){.overall-tables{grid-template-columns:minmax(0,1fr)}}
+
+.summary-choice-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0 5px}
+.summary-choice-filters .field{min-width:0}.summary-choice-filters select{width:100%;max-width:100%}
+@media(max-width:640px){.summary-choice-filters{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -124,7 +128,12 @@
  <div class="heading"><h2 id="overallTitle">Riepilogo generale · tutti i mesi</h2><span class="small" id="overallInfo">Totali calcolati su tutto l’archivio, indipendenti dal mese e dai filtri</span></div>
  <div class="overall-tables">
   <div><h3>Totale ore per classe</h3><div class="scroll"><table class="summary-report"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Classe / corso</th><th>Ore totali</th></tr></thead><tbody id="overallClassRows"></tbody></table></div></div>
-  <div><h3>Totale ore dei moduli per classe</h3><div class="scroll"><table class="summary-report summary-modules"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Classe / modulo</th><th>Ore totali</th></tr></thead><tbody id="overallModuleRows"></tbody></table></div></div>
+  <div><h3>Totale ore dei moduli per classe</h3>
+   <div class="summary-choice-filters">
+    <div class="field"><label for="summaryClass">Classe / corso</label><select id="summaryClass"><option value="">Tutte le classi</option></select></div>
+    <div class="field"><label for="summaryModule">Modulo</label><select id="summaryModule"><option value="">Tutti i moduli</option></select></div>
+   </div>
+   <p class="small" id="summarySelectionInfo" aria-live="polite"></p><div class="scroll"><table class="summary-report summary-modules"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Classe / modulo</th><th>Ore totali</th></tr></thead><tbody id="overallModuleRows"></tbody></table></div></div>
  </div>
  <p class="small">Ore programmate ricavate dalle fasce INIZIO–FINE; non certificano le ore effettivamente svolte. I record duplicati nell’origine vengono conteggiati.</p>
 </section><div id="dayDialog" class="day-overlay hidden" role="presentation"><section class="day-dialog" role="dialog" aria-modal="true" aria-labelledby="dayDialogTitle"><div class="day-dialog-header"><h2 id="dayDialogTitle">Dettaglio giornata</h2><button id="dayDialogClose" type="button" class="btn" aria-label="Chiudi dettaglio">✕ Chiudi</button></div><div id="dayDialogBody"></div></section></div><p class="footer">Fonte: archivio riservato Supabase · Aggiornamento da Google Sheets</p>
@@ -209,7 +218,7 @@ async function load(){
     $('error').classList.remove('hidden');
   }
 }
-function initialize(){const weeks=sorted(rows.map(r=>r.week));const months=sorted(rows.map(r=>r.month));const today=new Date(),current=weekStart(new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())));let nearest=weeks.filter(w=>w<=current).at(-1)||weeks[0];opt($('week'),weeks.map(x=>x),null,$('week').value||nearest);[...$('week').options].forEach(o=>o.textContent=labelWeek(o.value));let monthNow=String(today.getFullYear())+'-'+String(today.getMonth()+1).padStart(2,'0');opt($('month'),months,null,$('month').value||(months.includes(monthNow)?monthNow:months.at(-1)));[...$('month').options].forEach(o=>o.textContent=fmtMonth.format(new Date(o.value+'-01T00:00:00Z')));populateWeekFilters();populateMonthFilters();renderWeek();renderMonth();renderOverall();}
+function initialize(){const weeks=sorted(rows.map(r=>r.week));const months=sorted(rows.map(r=>r.month));const today=new Date(),current=weekStart(new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())));let nearest=weeks.filter(w=>w<=current).at(-1)||weeks[0];opt($('week'),weeks.map(x=>x),null,$('week').value||nearest);[...$('week').options].forEach(o=>o.textContent=labelWeek(o.value));let monthNow=String(today.getFullYear())+'-'+String(today.getMonth()+1).padStart(2,'0');opt($('month'),months,null,$('month').value||(months.includes(monthNow)?monthNow:months.at(-1)));[...$('month').options].forEach(o=>o.textContent=fmtMonth.format(new Date(o.value+'-01T00:00:00Z')));populateWeekFilters();populateMonthFilters();renderWeek();renderMonth();populateOverallFilters();renderOverall();}
 $('wsite').dataset.field='site';$('mmodule').dataset.field='module';
 function populateWeekFilters(){const w=$('week').value;const wd=rows.filter(r=>r.week===w);opt($('wsite'),sorted(wd.map(r=>r.site)),'Tutte le sedi');const base=wd.filter(r=>has(r,'wsite','site'));opt($('wclass'),sorted(base.map(r=>r.class)),'Tutte le classi');}
 function populateMonthFilters(){const m=$('month').value;const ids=[['mclass','class','Tutte le classi'],['mmodule','module','Tutti i moduli'],['mteacher','teacher','Tutti i formatori']];for(const [id,key,label] of ids){const others=rows.filter(r=>r.month===m&&ids.every(([otherId,otherKey])=>otherId===id||has(r,otherId,otherKey)));opt($(id),sorted(others.map(r=>r[key])),label);}}
@@ -236,12 +245,26 @@ function overallData(){
  const modules=[...byClassModule.values()].sort((a,b)=>coll.compare(a.className,b.className)||coll.compare(a.module,b.module));
  return {classes,modules,grand};
 }
+function populateOverallFilters(){
+ const {modules}=overallData();
+ const classSelect=$('summaryClass'),moduleSelect=$('summaryModule');
+ const priorClass=classSelect.value,priorModule=moduleSelect.value;
+ const classes=sorted(modules.map(m=>m.className));
+ opt(classSelect,classes,'Tutte le classi',priorClass);
+ const matching=modules.filter(m=>!classSelect.value||m.className===classSelect.value);
+ opt(moduleSelect,sorted(matching.map(m=>m.module)),'Tutti i moduli',priorModule);
+}
 function renderOverall(){
  const {classes,modules,grand}=overallData();
  $('overallClassRows').innerHTML=classes.map(([name,h])=>'<tr><td>'+html(name)+'</td><td class="num-total">'+html(displayHours(h))+'</td></tr>').join('')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
- $('overallModuleRows').innerHTML=modules.map(r=>'<tr><td><strong>'+html(r.className)+'</strong> · '+html(r.module)+'</td><td class="num-total">'+html(displayHours(r.hours))+'</td></tr>').join('')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
+ const selected=modules.filter(m=>(!$('summaryClass').value||m.className===$('summaryClass').value)&&(!$('summaryModule').value||m.module===$('summaryModule').value));
+ const subtotal=selected.reduce((total,m)=>total+m.hours,0);
+ $('overallModuleRows').innerHTML=(selected.length?selected.map(m=>'<tr><td><strong>'+html(m.className)+'</strong> · '+html(m.module)+'</td><td class="num-total">'+html(displayHours(m.hours))+'</td></tr>').join(''):'<tr><td colspan="2" class="empty">Nessun modulo per i filtri selezionati.</td></tr>')+'<tr class="overall-grand"><td>Totale selezione</td><td class="num-total">'+html(displayHours(subtotal))+'</td></tr>';
+ $('summarySelectionInfo').textContent=selected.length+' moduli visualizzati · '+displayHours(subtotal)+' ore (tutti i mesi)';
  $('overallInfo').textContent=classes.length+' classi · '+modules.length+' abbinamenti classe/modulo · '+displayHours(grand)+' ore complessive su tutti i mesi';
 }
+$('summaryClass').addEventListener('change',()=>{populateOverallFilters();renderOverall();});
+$('summaryModule').addEventListener('change',renderOverall);
 function renderMonth(){const selected=rows.filter(r=>r.month===$('month').value&&has(r,'mclass','class')&&has(r,'mmodule','module')&&has(r,'mteacher','teacher'));const month=$('month').value;$('monthTitle').textContent='Griglia mensile · '+(month?fmtMonth.format(new Date(month+'-01T00:00:00Z')):'');$('statHours').textContent=displayHours(selected.reduce((a,r)=>a+r.hours,0));$('statClasses').textContent=new Set(selected.map(r=>r.site+'|'+r.class)).size;$('statModules').textContent=new Set(selected.map(r=>r.module)).size;$('statTeachers').textContent=new Set(selected.map(r=>r.teacher)).size;
 if(!month){$('monthGrid').innerHTML='<div class="empty">Nessun mese disponibile.</div>';return;}
 const daysInMonth=rangeDays(month);
