@@ -68,6 +68,19 @@
 .overall-tables .report thead th{z-index:2;background:#eaf1fa}
 .overall-tables .report .overall-grand td{position:sticky;bottom:0;z-index:1;background:#eaf2fc!important;border-top:2px solid #b7cfe9;font-weight:800;box-shadow:0 -2px 5px #132f4910}
 @media(max-width:800px){.overall-tables{grid-template-columns:1fr}.overall-tables .report th:last-child,.overall-tables .report td:last-child{width:100px;min-width:100px;max-width:100px}}
+
+/* Riepiloghi a larghezza realmente contenuta: la regola globale .report min-width:740px non si applica. */
+.overall-tables{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.overall-tables > div{min-width:0;max-width:100%;overflow:hidden}
+.overall-tables > div > .scroll{overflow-x:hidden!important;overflow-y:auto!important;max-width:100%;min-width:0;width:100%;scrollbar-gutter:stable}
+.overall-tables .summary-report{border-collapse:collapse;table-layout:fixed;width:100%!important;max-width:100%;min-width:0!important;margin:0}
+.overall-tables .summary-report th,.overall-tables .summary-report td{box-sizing:border-box;padding:9px 8px;font-size:11px;line-height:1.4;border-bottom:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere;word-break:normal}
+.overall-tables .summary-report th{position:sticky;top:0;background:#eaf1fa;z-index:2;text-align:left}
+.overall-tables .summary-report td:last-child,.overall-tables .summary-report th:last-child{width:88px;min-width:0;max-width:88px;white-space:nowrap;text-align:right;padding-right:7px;font-size:11px;font-variant-numeric:tabular-nums}
+.overall-tables .summary-report.summary-modules td:first-child{font-size:10px;line-height:1.35;overflow-wrap:anywhere}
+.overall-tables .summary-report tbody tr:nth-child(even) td{background:#f9fbfe}
+.overall-tables .summary-report .overall-grand td{position:sticky;bottom:0;z-index:2;background:#eaf2fc!important;font-weight:800;border-top:2px solid #b7cfe9}
+@media(max-width:800px){.overall-tables{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -110,8 +123,8 @@
 <section id="overallSummary" class="panel hidden" aria-labelledby="overallTitle">
  <div class="heading"><h2 id="overallTitle">Riepilogo generale · tutti i mesi</h2><span class="small" id="overallInfo">Totali calcolati su tutto l’archivio, indipendenti dal mese e dai filtri</span></div>
  <div class="overall-tables">
-  <div><h3>Totale ore per classe</h3><div class="scroll"><table class="report"><thead><tr><th>Classe / corso</th><th>Ore totali</th></tr></thead><tbody id="overallClassRows"></tbody></table></div></div>
-  <div><h3>Totale ore per modulo</h3><div class="scroll"><table class="report"><thead><tr><th>Modulo</th><th>Ore totali</th></tr></thead><tbody id="overallModuleRows"></tbody></table></div></div>
+  <div><h3>Totale ore per classe</h3><div class="scroll"><table class="summary-report"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Classe / corso</th><th>Ore totali</th></tr></thead><tbody id="overallClassRows"></tbody></table></div></div>
+  <div><h3>Totale ore per modulo</h3><div class="scroll"><table class="summary-report summary-modules"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Modulo</th><th>Ore totali</th></tr></thead><tbody id="overallModuleRows"></tbody></table></div></div>
  </div>
  <p class="small">Ore programmate ricavate dalle fasce INIZIO–FINE; non certificano le ore effettivamente svolte. I record duplicati nell’origine vengono conteggiati.</p>
 </section><div id="dayDialog" class="day-overlay hidden" role="presentation"><section class="day-dialog" role="dialog" aria-modal="true" aria-labelledby="dayDialogTitle"><div class="day-dialog-header"><h2 id="dayDialogTitle">Dettaglio giornata</h2><button id="dayDialogClose" type="button" class="btn" aria-label="Chiudi dettaglio">✕ Chiudi</button></div><div id="dayDialogBody"></div></section></div><p class="footer">Fonte: archivio riservato Supabase · Aggiornamento da Google Sheets</p>
