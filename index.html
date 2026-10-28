@@ -56,6 +56,18 @@
 
 #monthGrid .matrix .month-total{width:55px;min-width:55px;text-align:center;font-size:11px;font-weight:700;background:#eaf2fc;border-left:2px solid #b8cfe8}
 .overall-tables{display:grid;grid-template-columns:1fr 1fr;gap:18px}.overall-tables h3{margin:8px 0 10px;font-size:15px}.overall-tables .scroll{max-height:370px;overflow:auto}.overall-tables table{width:100%}.num-total{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.overall-grand td{background:#eaf2fc;font-weight:700;position:sticky;bottom:0}@media(max-width:720px){.overall-tables{grid-template-columns:1fr}}
+
+/* Riepiloghi generali: nessuna barra orizzontale, totali sempre leggibili. */
+.overall-tables{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.overall-tables>div{min-width:0}
+.overall-tables .scroll{width:100%;max-width:100%;overflow-x:hidden;overflow-y:auto;max-height:390px}
+.overall-tables .report{width:100%;min-width:0;max-width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+.overall-tables .report th:first-child,.overall-tables .report td:first-child{width:auto;overflow-wrap:anywhere;word-break:normal;text-align:left}
+.overall-tables .report th:last-child,.overall-tables .report td:last-child{width:105px;min-width:105px;max-width:105px;text-align:right;white-space:nowrap;padding-right:15px}
+.overall-tables .report th,.overall-tables .report td{padding:10px 12px;line-height:1.35;vertical-align:middle;font-size:12px}
+.overall-tables .report thead th{z-index:2;background:#eaf1fa}
+.overall-tables .report .overall-grand td{position:sticky;bottom:0;z-index:1;background:#eaf2fc!important;border-top:2px solid #b7cfe9;font-weight:800;box-shadow:0 -2px 5px #132f4910}
+@media(max-width:800px){.overall-tables{grid-template-columns:1fr}.overall-tables .report th:last-child,.overall-tables .report td:last-child{width:100px;min-width:100px;max-width:100px}}
 </style>
 </head>
 <body>
