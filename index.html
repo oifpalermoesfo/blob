@@ -7,11 +7,35 @@
 :root{--ink:#192943;--muted:#66768c;--navy:#133b67;--blue:#1d5faa;--line:#dce5ef;--bg:#f3f6fa;--panel:#fff;--ok:#13795b;--soft:#eaf2fc}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.48 system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink)}.wrap{max-width:1500px;margin:auto;padding:22px}.hero{background:linear-gradient(115deg,#12345b,#245e9f);color:white;padding:26px 30px;border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{display:flex;align-items:center;gap:18px;min-width:0}.brand-logo{display:block;width:145px;max-width:30vw;height:auto;background:white;border-radius:10px;padding:7px;flex-shrink:0}.brand-text{min-width:0}.hero h1{font-size:27px;margin:0 0 5px}.hero p{margin:0;color:#dbeaff}.pill{font-size:12px;background:#ffffff2b;border:1px solid #ffffff55;border-radius:999px;padding:7px 12px;white-space:nowrap}.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:19px 0}.tab{border:1px solid var(--line);background:white;border-radius:10px;padding:12px 18px;color:var(--ink);font-weight:700;cursor:pointer}.tab[aria-selected=true]{background:var(--navy);border-color:var(--navy);color:white}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;margin-bottom:17px;box-shadow:0 3px 15px #152c470a}.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;align-items:end}.field label{display:block;font-weight:650;margin-bottom:5px;font-size:12px;color:#52647a}.field select{width:100%;padding:10px 11px;min-height:42px;border:1px solid #cbd8e6;border-radius:9px;color:var(--ink);background:white}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.btn{border:1px solid #c4d5e5;background:white;color:var(--navy);border-radius:9px;padding:9px 13px;font-weight:650;cursor:pointer}.btn.primary{background:var(--navy);color:white;border-color:var(--navy)}.btn:hover{filter:brightness(.96)}.heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 15px}.heading h2{font-size:19px;margin:0}.small{font-size:12px;color:var(--muted)}.scroll{overflow:auto;border:1px solid var(--line);border-radius:12px}.timetable{border-collapse:separate;border-spacing:0;min-width:1020px;width:100%;table-layout:fixed}.timetable th{background:#eaf1fa;text-align:center;color:#244663;font-size:13px;padding:12px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.timetable th:first-child{width:118px}.timetable td{vertical-align:top;padding:8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;height:92px}.timetable td.time{background:#f6f8fc;font-size:11px;letter-spacing:-.25px;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:750;text-align:center;vertical-align:middle;color:#344e69;padding:6px 3px}.event{padding:9px;background:#edf5ff;border-left:3px solid #397ac2;border-radius:7px;margin-bottom:6px;overflow-wrap:anywhere}.event .mod{font-size:12px;font-weight:750;line-height:1.3}.event .teacher{font-size:12px;color:#47617d;margin-top:5px}.event .extra{font-size:11px;color:#736128;margin-top:4px}.event .site{font-size:9px;line-height:1.2;color:var(--muted);margin-top:4px}.event .detail-icon{display:inline-block;width:12px;height:12px;vertical-align:-2px;flex:none;margin-right:4px;color:#2865a4}.event .teacher .detail-icon{color:#496f8d}.empty{color:#9aa8b9;text-align:center;padding:20px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:17px}.stat{padding:16px;border-radius:13px;background:#f0f5fb;border:1px solid #dce7f3}.stat .num{font-size:25px;font-weight:800;color:#163d6c}.stat .lbl{font-size:12px;color:var(--muted)}.report{width:100%;border-collapse:collapse;min-width:740px}.report th{text-align:left;background:#eaf1fa;font-size:12px;position:sticky;top:0}.report td,.report th{padding:11px 12px;border-bottom:1px solid var(--line)}.report tr:nth-child(even) td{background:#f9fbfe}.report td:last-child,.report th:last-child{text-align:right;font-variant-numeric:tabular-nums}.notice{border:1px solid #e0c477;background:#fff9e8;padding:13px 15px;border-radius:10px;margin-bottom:15px}.error{background:#fceceb;color:#9c2a2a;border-color:#f3c3c0}.hidden{display:none!important}.footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}body.loading #status{color:#dff4ff}@media(max-width:650px){.wrap{padding:10px}.hero{padding:18px;display:block}.hero h1{font-size:22px}.brand{gap:10px}.brand-logo{width:100px;max-width:30vw;padding:5px}.pill{display:inline-block;margin-top:12px}.panel{padding:13px}.tabs{margin:12px 0}.tab{flex:1;padding:10px}}
 @media print{body{background:white}.hero{background:white;color:black;padding:8px}.hero p,.pill,.tabs,.filters,.actions,.footer,.no-print{display:none!important}.wrap{max-width:none;padding:0}.panel{box-shadow:none;border:0;padding:0}.scroll{overflow:visible}.timetable{min-width:0;font-size:10px}.timetable th:first-child{width:82px}.timetable td.time{font-size:9px;padding:3px 1px}.timetable td{padding:4px}.event{padding:4px} .report{min-width:0}}
+/* Area riservata / accesso */
+#appShell[hidden],#authScreen[hidden]{display:none!important}
+.auth-screen{min-height:76vh;display:grid;place-items:center;padding:24px 12px}
+.auth-card{width:min(100%,410px);background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 12px 34px #152c4717}
+.auth-card img{max-width:155px;max-height:95px;object-fit:contain;display:block;margin:0 auto 16px}
+.auth-card h1{text-align:center;font-size:23px;margin:0 0 5px}.auth-card>p{text-align:center;color:var(--muted);margin:0 0 23px}
+.auth-card label{display:block;font-size:12px;font-weight:700;margin:13px 0 5px}.auth-card input{width:100%;padding:11px 12px;border:1px solid #cbd8e6;border-radius:9px;font:inherit}
+.auth-card button{width:100%;margin-top:21px;padding:12px}.auth-error{margin-top:13px;padding:10px 12px;border-radius:8px;background:#fceceb;color:#9c2a2a;font-size:13px}
+.auth-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.auth-actions .pill{margin:0}.logout{background:transparent;color:white;border:1px solid #ffffff88;border-radius:9px;padding:8px 12px;cursor:pointer;font-weight:700}
+@media print{#authScreen,.logout{display:none!important}}
 </style>
 </head>
 <body>
+<div id="authScreen" class="auth-screen">
+  <form id="loginForm" class="auth-card" autocomplete="on">
+    <img src="https://esforario.francescorizzoweb.it/images/Logo-ESFO.png" alt="Logo ESFO">
+    <h1>Accesso riservato ESFO</h1>
+    <p>Consulta gli orari formativi con il tuo account autorizzato.</p>
+    <label for="loginEmail">Email</label>
+    <input id="loginEmail" name="username" type="email" autocomplete="username" required placeholder="nome@esempio.it">
+    <label for="loginPassword">Password</label>
+    <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+    <button class="btn primary" id="loginButton" type="submit">Accedi agli orari</button>
+    <div id="loginError" class="auth-error hidden" role="alert"></div>
+  </form>
+</div>
+<div id="appShell" hidden>
 <div class="wrap">
-<header class="hero"><div class="brand"><img class="brand-logo" src="https://esforario.francescorizzoweb.it/images/Logo-ESFO.png" alt="Logo ESFO" width="145" height="57"><div class="brand-text"><h1>Orari formativi</h1><p>Calendario settimanale e riepilogo delle ore per mese</p></div></div><span class="pill" id="status" aria-live="polite">Caricamento dati…</span></header>
+<header class="hero"><div class="brand"><img class="brand-logo" src="https://esforario.francescorizzoweb.it/images/Logo-ESFO.png" alt="Logo ESFO" width="145" height="57"><div class="brand-text"><h1>Orari formativi</h1><p>Calendario settimanale e riepilogo delle ore per mese</p></div></div><div class="auth-actions"><span class="pill" id="status" aria-live="polite">Caricamento dati…</span><button class="logout" id="logout" type="button">Esci</button></div></header>
 <nav class="tabs" role="tablist" aria-label="Modalità di consultazione"><button id="tabWeek" class="tab" role="tab" aria-selected="true" type="button">▦ Orario settimanale</button><button id="tabMonth" class="tab" role="tab" aria-selected="false" type="button">▤ Riepilogo mensile</button></nav>
 <div id="error" class="notice error hidden" role="alert"></div>
 <section id="viewWeek">
@@ -33,11 +57,30 @@
 </div><div class="actions"><button class="btn primary" id="csv" type="button">↓ Esporta riepilogo CSV</button><button class="btn" id="monthPrint" type="button">Stampa</button><button class="btn" id="reset" type="button">Azzera filtri</button><button class="btn" id="reloadM" type="button">↻ Aggiorna dati</button></div></div>
 <div class="cards"><div class="stat"><div class="num" id="statHours">0</div><div class="lbl">Ore complessive</div></div><div class="stat"><div class="num" id="statClasses">0</div><div class="lbl">Classi / corsi</div></div><div class="stat"><div class="num" id="statModules">0</div><div class="lbl">Moduli</div></div><div class="stat"><div class="num" id="statTeachers">0</div><div class="lbl">Formatori</div></div></div>
 <div class="panel"><div class="heading"><h2 id="monthTitle">Riepilogo mensile</h2><span class="small" id="rowCount"></span></div><div class="scroll"><table class="report"><thead id="reportHead"></thead><tbody id="reportBody"></tbody></table></div><p class="small">I totali rappresentano ore programmate nel JSON, non necessariamente ore svolte o validate. Eventuali righe duplicate nell'origine contribuiscono più volte ai totali.</p></div>
-</section><p class="footer">Fonte: repository GitHub oifpalermoesfo/blob · dati.json</p>
+</section><p class="footer">Fonte: archivio riservato Supabase · Aggiornamento da Google Sheets</p>
+</div>
 </div>
 <script>
 (()=>{'use strict';
-const URL_JSON='https://raw.githubusercontent.com/oifpalermoesfo/blob/main/dati.json';
+// Solo la chiave PUBBLICABILE (sb_publishable_...). Non inserire mai sb_secret_ qui.
+const SUPABASE_URL='https://mmfxfgxaqbergrxrvqjf.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Pv9OAEUm8E6QhMdM72CuzQ_ji7WzVX5';
+const SESSION_KEY='esfo_supabase_session_v1';
+let session=null;
+let loadSerial=0;
+const configReady=()=>SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
+const apiHeaders=(token)=>({apikey:SUPABASE_PUBLISHABLE_KEY,...(token?{Authorization:'Bearer '+token}:{})});
+const isExpired=(data)=>!data?.access_token || !data?.refresh_token || !data?.expires_at || data.expires_at <= Math.floor(Date.now()/1000)+30;
+function saveSession(data){session=data;sessionStorage.setItem(SESSION_KEY,JSON.stringify(data));}
+function clearSession(){session=null;sessionStorage.removeItem(SESSION_KEY);}
+function loginMessage(message){$('loginError').textContent=message;$('loginError').classList.toggle('hidden',!message);}
+function showLogin(message=''){$('appShell').hidden=true;$('authScreen').hidden=false;rows=[];loadSerial++;loginMessage(message);$('loginPassword').value='';}
+function showApp(){$('authScreen').hidden=true;$('appShell').hidden=false;loginMessage('');}
+async function authRequest(grant,body){const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{...apiHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});const result=await res.json().catch(()=>({}));if(!res.ok)throw new Error(result.error_description||result.msg||result.message||'Credenziali non valide');return result;}
+async function token(){if(!session)throw new Error('Sessione non disponibile');if(!isExpired(session))return session.access_token;try{const result=await authRequest('refresh_token',{refresh_token:session.refresh_token});saveSession({...result,expires_at:Math.floor(Date.now()/1000)+(result.expires_in||3600)});return session.access_token;}catch(e){clearSession();showLogin('Sessione scaduta. Accedi nuovamente.');throw new Error('Sessione scaduta');}}
+async function startSession(authData){saveSession({...authData,expires_at:Math.floor(Date.now()/1000)+(authData.expires_in||3600)});showApp();await load();}
+$('loginForm').addEventListener('submit',async event=>{event.preventDefault();loginMessage('');if(!configReady()){loginMessage('Configurazione mancante: inserire la Publishable Key nel file index.html.');return;}const btn=$('loginButton');btn.disabled=true;btn.textContent='Accesso in corso…';try{const auth=await authRequest('password',{email:$('loginEmail').value.trim(),password:$('loginPassword').value});await startSession(auth);}catch(e){if(!$('authScreen').hidden)loginMessage('Accesso non riuscito: '+e.message);}finally{btn.disabled=false;btn.textContent='Accedi agli orari';}});
+$('logout').addEventListener('click',async()=>{const old=session?.access_token;clearSession();showLogin();if(old){try{await fetch(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:apiHeaders(old)});}catch(_){/* sessione locale già revocata */}}});
 const $=id=>document.getElementById(id);
 const fmtDate=new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'});
 const fmtMonth=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric',timeZone:'UTC'});
@@ -69,7 +112,32 @@ function labelWeek(k){return fmtDate.format(addDays(k,0))+' — '+fmtDate.format
 function has(r,id,key){return !$(id).value||r[key]===$(id).value;}
 function parseRow(raw){const o={};Object.entries(raw).forEach(([key,val])=>{o[key.trim().toUpperCase()]=clean(val)});const date=parseDate(o.DATAOR);if(!date)return null;const start=minutes(o.INIZIO||o.ORARIO.split('-')[0]);const end=minutes(o.FINE||o.ORARIO.split('-')[1]);const hours=Number.isFinite(start)&&Number.isFinite(end)&&end>start?(end-start)/60:0;
 return {site:o.SEDE||'Sede non specificata',class:o.CLASSE_SEZIONE||[o.CLASSE,o.IDCORSO].filter(Boolean).join(' ')||'Classe non specificata',module:o.MODULO||'Modulo non specificato',teacher:o.FORMATORE||'Formatore non specificato',sub:o.SUPPLITO||'',date:dkey(date),week:weekStart(date),month:dkey(date).slice(0,7),start,end,slot:o.ORARIO||(o.INIZIO+' - '+o.FINE),hours};}
-async function load(){try{$('status').textContent='Caricamento dati…';$('error').classList.add('hidden');const res=await fetch(URL_JSON+'?t='+Date.now(),{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();if(!Array.isArray(data))throw new Error('Il JSON deve contenere un elenco di righe');const valid=data.map(parseRow).filter(Boolean);if(!valid.length)throw new Error('Nessuna riga con DATAOR valida');rows=valid;initialize();$('status').textContent=rows.length.toLocaleString('it-IT')+' fasce caricate';}catch(e){$('status').textContent='Errore caricamento';$('error').textContent='Impossibile leggere il JSON: '+e.message+'. Controlla che dati.json sia pubblico, valido e disponibile.';$('error').classList.remove('hidden');}}
+async function load(){
+  const current=++loadSerial;
+  try{
+    $('status').textContent='Caricamento dati…';$('error').classList.add('hidden');
+    const jwt=await token();
+    // L'autorizzazione viene verificata in Supabase tramite RLS sulla tabella orari.
+    const res=await fetch(SUPABASE_URL+'/rest/v1/orari?id=eq.1&select=dati',{
+      headers:{...apiHeaders(jwt),Accept:'application/json'},cache:'no-store'
+    });
+    if(current!==loadSerial)return;
+    if(res.status===401){clearSession();showLogin('Sessione non valida. Accedi nuovamente.');return;}
+    if(!res.ok)throw new Error('Lettura Supabase non riuscita (HTTP '+res.status+')');
+    const records=await res.json();
+    if(!Array.isArray(records)||!records.length)throw new Error('Accesso agli orari non autorizzato o archivio vuoto. Controlla il profilo attivo e la policy RLS.');
+    const data=records[0].dati;
+    if(!Array.isArray(data))throw new Error('Il campo dati non contiene un array JSON');
+    const valid=data.map(parseRow).filter(Boolean);
+    if(!valid.length)throw new Error('Nessuna riga con DATAOR valida');
+    rows=valid;initialize();$('status').textContent=rows.length.toLocaleString('it-IT')+' fasce caricate';
+  }catch(e){
+    if(current!==loadSerial || $('appShell').hidden)return;
+    $('status').textContent='Errore caricamento';
+    $('error').textContent=e.message+' · Verifica account, permessi e connessione.';
+    $('error').classList.remove('hidden');
+  }
+}
 function initialize(){const weeks=sorted(rows.map(r=>r.week));const months=sorted(rows.map(r=>r.month));const today=new Date(),current=weekStart(new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())));let nearest=weeks.filter(w=>w<=current).at(-1)||weeks[0];opt($('week'),weeks.map(x=>x),null,$('week').value||nearest);[...$('week').options].forEach(o=>o.textContent=labelWeek(o.value));let monthNow=String(today.getFullYear())+'-'+String(today.getMonth()+1).padStart(2,'0');opt($('month'),months,null,$('month').value||(months.includes(monthNow)?monthNow:months.at(-1)));[...$('month').options].forEach(o=>o.textContent=fmtMonth.format(new Date(o.value+'-01T00:00:00Z')));populateWeekFilters();populateMonthFilters();renderWeek();renderMonth();}
 $('wsite').dataset.field='site';$('msite').dataset.field='site';$('mmodule').dataset.field='module';
 function populateWeekFilters(){const w=$('week').value;const wd=rows.filter(r=>r.week===w);opt($('wsite'),sorted(wd.map(r=>r.site)),'Tutte le sedi');const base=wd.filter(r=>has(r,'wsite','site'));opt($('wclass'),sorted(base.map(r=>r.class)),'Tutte le classi');}
@@ -89,6 +157,10 @@ for(const id of ['month','msite','mclass','mmodule','mteacher'])$(id).addEventLi
 function moveWeek(delta){const w=$('week');const i=w.selectedIndex+delta;if(i>=0&&i<w.options.length){w.selectedIndex=i;populateWeekFilters();renderWeek();}}
 $('prevWeek').addEventListener('click',()=>moveWeek(-1));$('nextWeek').addEventListener('click',()=>moveWeek(1));$('reset').addEventListener('click',()=>{for(const id of ['msite','mclass','mmodule','mteacher'])$(id).value='';$('group').value='all';populateMonthFilters();renderMonth()});$('weekPrint').addEventListener('click',()=>print());$('monthPrint').addEventListener('click',()=>print());$('reloadW').addEventListener('click',load);$('reloadM').addEventListener('click',load);
 $('csv').addEventListener('click',()=>{const escape=v=>'"'+String(v).replaceAll('"','""')+'"';const csv='\uFEFF'+[lastHeaders,...lastReport].map(r=>r.map(escape).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='riepilogo_orari_'+$('month').value+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});
-load();
+(async()=>{
+  if(!configReady()){showLogin('Prima di pubblicare: configura SUPABASE_PUBLISHABLE_KEY in index.html.');return;}
+  try{const old=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');if(old?.refresh_token){session=old;await token();showApp();await load();}else{showLogin();}}
+  catch(_){clearSession();showLogin();}
+})();
 })();
 </script></body></html>
