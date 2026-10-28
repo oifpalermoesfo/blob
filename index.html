@@ -32,6 +32,24 @@
 .day-dialog-header{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:15px}
 .day-dialog-header h2{font-size:21px;margin:0}.day-detail{padding:12px 0;border-bottom:1px solid var(--line)}.day-detail:last-child{border-bottom:0}.day-detail-time{font-size:18px;font-weight:750;color:var(--navy)}
 @media print{.day-overlay{display:none!important}.matrix .stick{position:static}.matrix .day .day-button{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+
+/* Griglia mensile compatta: 3 colonne descrittive + 28-31 giornate, senza scroll orizzontale. */
+#monthGrid{overflow-x:visible;max-width:100%;}
+#monthGrid .matrix{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;}
+#monthGrid .matrix th,#monthGrid .matrix td{padding:3px 2px;border:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;}
+#monthGrid .matrix .col-class{width:11%;min-width:0;max-width:none;}
+#monthGrid .matrix .col-teacher{width:14%;min-width:0;max-width:none;}
+#monthGrid .matrix .col-module{width:20%;min-width:0;max-width:none;}
+#monthGrid .matrix .day{width:auto;min-width:0;padding:2px 0;font-size:10px;}
+#monthGrid .matrix .daynum{font-size:10px;letter-spacing:-.25px;}
+#monthGrid .matrix .class-cell,#monthGrid .matrix .teacher-cell,#monthGrid .matrix .module-cell{font-size:10px;line-height:1.15;overflow-wrap:anywhere;}
+#monthGrid .matrix .module-cell{font-size:9px;}
+#monthGrid .matrix .teacher-tag{padding:2px 3px;font-size:10px;max-width:100%;overflow-wrap:anywhere;}
+#monthGrid .matrix .day.cell-active{padding:1px 0;}
+#monthGrid .matrix .day .day-button{width:100%;height:23px;min-width:0;border-radius:3px;padding:0;font-size:10px;white-space:nowrap;letter-spacing:-.25px;}
+#monthGrid .matrix .day .day-button:hover,#monthGrid .matrix .day .day-button:focus-visible{transform:none;outline-offset:0;}
+@media(max-width:900px){#monthGrid .matrix .col-class{width:10%;}#monthGrid .matrix .col-teacher{width:13%;}#monthGrid .matrix .col-module{width:18%;}#monthGrid .matrix .day .day-button{font-size:9px;}#monthGrid .matrix .class-cell,#monthGrid .matrix .teacher-cell,#monthGrid .matrix .module-cell{font-size:9px;}}
+@media print{#monthGrid .matrix{table-layout:fixed;}#monthGrid .matrix .day .day-button{font-size:9px;}}
 </style>
 </head>
 <body>
@@ -62,7 +80,7 @@
 <div class="panel"><div class="heading"><h2 id="weekTitle">Orario settimanale</h2><span class="small" id="weekSummary"></span></div><div id="weekGrid" class="scroll"></div></div>
 </section>
 <section id="viewMonth" class="hidden">
-<div class="panel"><div class="heading"><h2>Griglia mensile delle lezioni</h2><span class="small">Una riga per sede, classe, formatore e modulo. Passa il mouse sui giorni evidenziati per vedere gli orari.</span></div><div class="filters">
+<div class="panel"><div class="heading"><h2>Griglia mensile delle lezioni</h2><span class="small">Una riga per classe, formatore e modulo. Ogni giorno mostra le ore totali; passa il mouse o clicca per il dettaglio.</span></div><div class="filters">
 <div class="field"><label for="month">Mese</label><select id="month"></select></div>
 <div class="field"><label for="msite">Sede</label><select id="msite"></select></div>
 <div class="field"><label for="mclass">Classe / codice corso</label><select id="mclass"></select></div>
@@ -174,15 +192,15 @@ const groups=new Map();
 windowMonthDetails=[];
 for(const r of selected){const values=[r.site,r.class,r.teacher,r.module];const k=JSON.stringify(values);if(!groups.has(k))groups.set(k,{values,days:new Map(),hours:0,fasce:0});const g=groups.get(k);const d=dayNum(r.date);if(!g.days.has(d))g.days.set(d,[]);g.days.get(d).push(r);g.hours+=r.hours;g.fasce++;}
 const report=[...groups.values()].sort((a,b)=>{for(let i=0;i<a.values.length;i++){const c=coll.compare(a.values[i],b.values[i]);if(c)return c;}return 0;});
-lastHeaders=['Sede','Classe / corso','Formatore','Modulo',...daysInMonth];
-lastReport=report.map(g=>{const row=[siteLabel(g.values[0]),g.values[1],g.values[2],moduleLabel(g.values[3])];for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);row.push(items.length?items.map(x=>timeLabel(x)).join(' | '):'');}return row;});
+lastHeaders=['Classe / corso','Formatore','Modulo',...daysInMonth];
+lastReport=report.map(g=>{const row=[g.values[1],g.values[2],moduleLabel(g.values[3])];for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);row.push(items.length?displayHours(items.reduce((sum,x)=>sum+x.hours,0)):'');}return row;});
 $('rowCount').textContent=report.length+' righe · '+selected.length+' lezioni';
 if(!report.length){$('monthGrid').innerHTML='<div class="empty">Nessun dato per i filtri selezionati.</div>';return;}
-let out='<div class="legend"><span><i class="marker on">•</i> giornata con lezione</span><span><i class="marker off">•</i> nessuna lezione</span></div><table class="matrix"><thead><tr>'+
-'<th class="stick head-stick col-site">Sede</th><th class="stick head-stick s2 col-class">Classe / corso</th><th class="stick head-stick s3 col-teacher">Formatore</th><th class="stick head-stick s4 col-module">Modulo</th>'+
+let out='<div class="legend"><span>Ogni cella indica le ore del giorno. Clicca per il dettaglio.</span></div><table class="matrix"><thead><tr>'+
+'<th class="col-class">Classe / corso</th><th class="col-teacher">Formatore</th><th class="col-module">Modulo</th>'+
 daysInMonth.map(d=>'<th class="day"><span class="daynum">'+d+'</span></th>').join('')+'</tr></thead><tbody>';
-for(const g of report){out+='<tr>'+'<td class="stick sticky-wrap site-cell col-site">'+html(siteLabel(g.values[0]))+'</td>'+'<td class="stick sticky-wrap s2 class-cell col-class">'+html(g.values[1])+'</td>'+'<td class="stick sticky-wrap s3 teacher-cell col-teacher"><span class="teacher-tag '+teacherColor(g.values[2])+'">'+html(g.values[2])+'</span></td>'+'<td class="stick sticky-wrap s4 module-cell col-module">'+html(moduleLabel(g.values[3]))+'</td>';
-for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);if(items.length){const tip=items.map(x=>fmtDate.format(new Date(x.date+'T00:00:00Z'))+' · '+timeLabel(x)+(x.sub?' · Supplito: '+x.sub:'')) .join('\n');const index=windowMonthDetails.push({values:g.values,items:items.slice(),date:items[0].date})-1;out+='<td class="day cell-active"><button type="button" class="day-button '+teacherColor(g.values[2])+'" data-day-detail="'+index+'" title="'+html(tip)+'" aria-label="Dettagli lezioni del '+html(fmtDate.format(new Date(items[0].date+'T00:00:00Z')))+'">●</button></td>';}else{out+='<td class="day"><span class="marker off">&nbsp;</span></td>';}}
+for(const g of report){out+='<tr>'+'<td class="class-cell col-class" title="'+html(g.values[1])+'">'+html(g.values[1])+'</td>'+'<td class="stick sticky-wrap s3 teacher-cell col-teacher"><span class="teacher-tag '+teacherColor(g.values[2])+'">'+html(g.values[2])+'</span></td>'+'<td class="module-cell col-module" title="'+html(moduleLabel(g.values[3]))+'">'+html(moduleLabel(g.values[3]))+'</td>';
+for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);if(items.length){const tip=items.map(x=>fmtDate.format(new Date(x.date+'T00:00:00Z'))+' · '+timeLabel(x)+(x.sub?' · Supplito: '+x.sub:'')) .join('\n');const index=windowMonthDetails.push({values:g.values,items:items.slice(),date:items[0].date})-1;const ore=displayHours(items.reduce((total,r)=>total+r.hours,0));out+='<td class="day cell-active"><button type="button" class="day-button '+teacherColor(g.values[2])+'" data-day-detail="'+index+'" title="'+html(tip)+'" aria-label="Dettagli lezioni del '+html(fmtDate.format(new Date(items[0].date+'T00:00:00Z')))+' · '+html(ore)+' ore">'+html(ore)+'</button></td>';}else{out+='<td class="day"><span class="marker off">&nbsp;</span></td>';}}
 out+='</tr>';}
 out+='</tbody></table>';$('monthGrid').innerHTML=out;}
 function closeDayDialog(){ $('dayDialog').classList.add('hidden'); if(lastFocusedDay && lastFocusedDay.isConnected)lastFocusedDay.focus(); }
