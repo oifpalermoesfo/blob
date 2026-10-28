@@ -86,10 +86,24 @@
 .summary-choice-filters .field{min-width:0}.summary-choice-filters select{width:100%;max-width:100%}
 @media(max-width:640px){.summary-choice-filters{grid-template-columns:minmax(0,1fr)}}
 </style>
+<script>
+// Rimuove eventuali credenziali finite nell'URL nelle versioni precedenti.
+(function () {
+  try {
+    const url = new URL(window.location.href);
+    const sensitive = ['password','passwd','pwd','username'];
+    let changed = false;
+    for (const key of sensitive) {
+      if (url.searchParams.has(key)) { url.searchParams.delete(key); changed = true; }
+    }
+    if (changed) history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+  } catch (_) {}
+})();
+</script>
 </head>
 <body>
 <div id="authScreen" class="auth-screen">
-  <form id="loginForm" class="auth-card" autocomplete="on">
+  <form id="loginForm" class="auth-card" method="post" autocomplete="on" onsubmit="return false;">
     <img src="https://esforario.francescorizzoweb.it/images/Logo-ESFO.png" alt="Logo ESFO">
     <h1>Accesso riservato ESFO</h1>
     <p>Consulta gli orari formativi con il tuo account autorizzato.</p>
