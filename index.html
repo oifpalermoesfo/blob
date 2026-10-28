@@ -50,6 +50,9 @@
 #monthGrid .matrix .day .day-button:hover,#monthGrid .matrix .day .day-button:focus-visible{transform:none;outline-offset:0;}
 @media(max-width:900px){#monthGrid .matrix .col-class{width:10%;}#monthGrid .matrix .col-teacher{width:13%;}#monthGrid .matrix .col-module{width:18%;}#monthGrid .matrix .day .day-button{font-size:9px;}#monthGrid .matrix .class-cell,#monthGrid .matrix .teacher-cell,#monthGrid .matrix .module-cell{font-size:9px;}}
 @media print{#monthGrid .matrix{table-layout:fixed;}#monthGrid .matrix .day .day-button{font-size:9px;}}
+
+/* Nella griglia mensile le colonne devono restare allineate */
+#monthGrid .matrix .teacher-cell{position:static;left:auto;z-index:auto;}
 </style>
 </head>
 <body>
@@ -198,7 +201,7 @@ if(!report.length){$('monthGrid').innerHTML='<div class="empty">Nessun dato per 
 let out='<div class="legend"><span>Ogni cella indica le ore del giorno. Clicca per il dettaglio.</span></div><table class="matrix"><thead><tr>'+
 '<th class="col-class">Classe / corso</th><th class="col-teacher">Formatore</th><th class="col-module">Modulo</th>'+
 daysInMonth.map(d=>'<th class="day"><span class="daynum">'+d+'</span></th>').join('')+'</tr></thead><tbody>';
-for(const g of report){out+='<tr>'+'<td class="class-cell col-class" title="'+html(g.values[0])+'">'+html(g.values[0])+'</td>'+'<td class="stick sticky-wrap s3 teacher-cell col-teacher"><span class="teacher-tag '+teacherColor(g.values[1])+'">'+html(g.values[1])+'</span></td>'+'<td class="module-cell col-module" title="'+html(moduleLabel(g.values[2]))+'">'+html(moduleLabel(g.values[2]))+'</td>';
+for(const g of report){out+='<tr>'+'<td class="class-cell col-class" title="'+html(g.values[0])+'">'+html(g.values[0])+'</td>'+'<td class="teacher-cell col-teacher"><span class="teacher-tag '+teacherColor(g.values[1])+'">'+html(g.values[1])+'</span></td>'+'<td class="module-cell col-module" title="'+html(moduleLabel(g.values[2]))+'">'+html(moduleLabel(g.values[2]))+'</td>';
 for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);if(items.length){const tip=items.map(x=>fmtDate.format(new Date(x.date+'T00:00:00Z'))+' · '+timeLabel(x)+(x.sub?' · Supplito: '+x.sub:'')) .join('\n');const index=windowMonthDetails.push({values:g.values,items:items.slice(),date:items[0].date})-1;const ore=displayHours(items.reduce((total,r)=>total+r.hours,0));out+='<td class="day cell-active"><button type="button" class="day-button '+teacherColor(g.values[1])+'" data-day-detail="'+index+'" title="'+html(tip)+'" aria-label="Dettagli lezioni del '+html(fmtDate.format(new Date(items[0].date+'T00:00:00Z')))+' · '+html(ore)+' ore">'+html(ore)+'</button></td>';}else{out+='<td class="day"><span class="marker off">&nbsp;</span></td>';}}
 out+='</tr>';}
 out+='</tbody></table>';$('monthGrid').innerHTML=out;}
