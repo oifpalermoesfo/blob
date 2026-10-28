@@ -66,6 +66,7 @@
 const SUPABASE_URL='https://mmfxfgxaqbergrxrvqjf.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Pv9OAEUm8E6QhMdM72CuzQ_ji7WzVX5';
 const SESSION_KEY='esfo_supabase_session_v1';
+const $=id=>document.getElementById(id);
 let session=null;
 let loadSerial=0;
 const configReady=()=>SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
@@ -81,7 +82,6 @@ async function token(){if(!session)throw new Error('Sessione non disponibile');i
 async function startSession(authData){saveSession({...authData,expires_at:Math.floor(Date.now()/1000)+(authData.expires_in||3600)});showApp();await load();}
 $('loginForm').addEventListener('submit',async event=>{event.preventDefault();loginMessage('');if(!configReady()){loginMessage('Configurazione mancante: inserire la Publishable Key nel file index.html.');return;}const btn=$('loginButton');btn.disabled=true;btn.textContent='Accesso in corso…';try{const auth=await authRequest('password',{email:$('loginEmail').value.trim(),password:$('loginPassword').value});await startSession(auth);}catch(e){if(!$('authScreen').hidden)loginMessage('Accesso non riuscito: '+e.message);}finally{btn.disabled=false;btn.textContent='Accedi agli orari';}});
 $('logout').addEventListener('click',async()=>{const old=session?.access_token;clearSession();showLogin();if(old){try{await fetch(SUPABASE_URL+'/auth/v1/logout',{method:'POST',headers:apiHeaders(old)});}catch(_){/* sessione locale già revocata */}}});
-const $=id=>document.getElementById(id);
 const fmtDate=new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'});
 const fmtMonth=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric',timeZone:'UTC'});
 const days=['Lun','Mar','Mer','Gio','Ven','Sab'];
