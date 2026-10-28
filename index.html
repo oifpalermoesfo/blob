@@ -116,7 +116,7 @@
 <div class="field"><label for="mclass">Classe / codice corso</label><select id="mclass"></select></div>
 <div class="field"><label for="mteacher">Solo formatore</label><select id="mteacher"></select></div>
 <div class="field"><label for="mmodule">Modulo</label><select id="mmodule"></select></div>
-</div><div class="actions"><button class="btn primary" id="csv" type="button">↓ Esporta griglia CSV</button><button class="btn" id="monthPrint" type="button">Stampa</button><button class="btn" id="reset" type="button">Azzera filtri</button><button class="btn" id="reloadM" type="button">↻ Aggiorna dati</button></div></div>
+</div><div class="actions"><button class="btn primary" id="csv" type="button">↓ Esporta griglia CSV</button><button class="btn primary" id="excel" type="button">↓ Esporta tutto in Excel</button><button class="btn" id="monthPrint" type="button">Stampa</button><button class="btn" id="reset" type="button">Azzera filtri</button><button class="btn" id="reloadM" type="button">↻ Aggiorna dati</button></div></div>
 <div class="cards"><div class="stat"><div class="num" id="statHours">0</div><div class="lbl">Ore complessive</div></div><div class="stat"><div class="num" id="statClasses">0</div><div class="lbl">Classi / corsi</div></div><div class="stat"><div class="num" id="statModules">0</div><div class="lbl">Moduli</div></div><div class="stat"><div class="num" id="statTeachers">0</div><div class="lbl">Formatori</div></div></div>
 <div class="panel"><div class="heading"><h2 id="monthTitle">Griglia mensile</h2><span class="small" id="rowCount"></span></div><div id="monthGrid" class="scroll"></div><p class="small">Le celle evidenziate indicano che in quella giornata è presente almeno una lezione per la combinazione indicata. Passa il mouse per vedere gli orari oppure clicca su un giorno evidenziato per aprire il dettaglio completo.</p></div>
 </section>
@@ -124,12 +124,13 @@
  <div class="heading"><h2 id="overallTitle">Riepilogo generale · tutti i mesi</h2><span class="small" id="overallInfo">Totali calcolati su tutto l’archivio, indipendenti dal mese e dai filtri</span></div>
  <div class="overall-tables">
   <div><h3>Totale ore per classe</h3><div class="scroll"><table class="summary-report"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Classe / corso</th><th>Ore totali</th></tr></thead><tbody id="overallClassRows"></tbody></table></div></div>
-  <div><h3>Totale ore per modulo</h3><div class="scroll"><table class="summary-report summary-modules"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Modulo</th><th>Ore totali</th></tr></thead><tbody id="overallModuleRows"></tbody></table></div></div>
+  <div><h3>Totale ore dei moduli per classe</h3><div class="scroll"><table class="summary-report summary-modules"><colgroup><col><col style="width:88px"></colgroup><thead><tr><th>Classe / modulo</th><th>Ore totali</th></tr></thead><tbody id="overallModuleRows"></tbody></table></div></div>
  </div>
  <p class="small">Ore programmate ricavate dalle fasce INIZIO–FINE; non certificano le ore effettivamente svolte. I record duplicati nell’origine vengono conteggiati.</p>
 </section><div id="dayDialog" class="day-overlay hidden" role="presentation"><section class="day-dialog" role="dialog" aria-modal="true" aria-labelledby="dayDialogTitle"><div class="day-dialog-header"><h2 id="dayDialogTitle">Dettaglio giornata</h2><button id="dayDialogClose" type="button" class="btn" aria-label="Chiudi dettaglio">✕ Chiudi</button></div><div id="dayDialogBody"></div></section></div><p class="footer">Fonte: archivio riservato Supabase · Aggiornamento da Google Sheets</p>
 </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 (()=>{'use strict';
 // Solo la chiave PUBBLICABILE (sb_publishable_...). Non inserire mai sb_secret_ qui.
@@ -223,13 +224,23 @@ function monthLength(month){const [y,m]=month.split('-').map(Number);return new 
 function rangeDays(month){const len=monthLength(month);return Array.from({length:len},(_,i)=>String(i+1));}
 function dayNum(dateKey){return String(Number(dateKey.slice(8,10)));}
 function timeLabel(r){return clean(r.slot||((Number.isFinite(r.start)?String(Math.floor(r.start/60)).padStart(2,'0')+':'+String(r.start%60).padStart(2,'0'):'')+' - '+(Number.isFinite(r.end)?String(Math.floor(r.end/60)).padStart(2,'0')+':'+String(r.end%60).padStart(2,'0'):'')));}
+function overallData(){
+ const byClass=new Map(),byClassModule=new Map();let grand=0;
+ for(const r of rows){const h=r.hours||0;grand+=h;
+  byClass.set(r.class,(byClass.get(r.class)||0)+h);
+  const key=JSON.stringify([r.class,moduleLabel(r.module)]);
+  if(!byClassModule.has(key))byClassModule.set(key,{className:r.class,module:moduleLabel(r.module),hours:0});
+  byClassModule.get(key).hours+=h;
+ }
+ const classes=[...byClass].sort((a,b)=>coll.compare(a[0],b[0]));
+ const modules=[...byClassModule.values()].sort((a,b)=>coll.compare(a.className,b.className)||coll.compare(a.module,b.module));
+ return {classes,modules,grand};
+}
 function renderOverall(){
- const byClass=new Map(),byModule=new Map();let grand=0;
- for(const r of rows){const h=r.hours||0;grand+=h;byClass.set(r.class,(byClass.get(r.class)||0)+h);byModule.set(r.module,(byModule.get(r.module)||0)+h);}
- const toRows=(map,kind)=>[...map.entries()].sort((a,b)=>coll.compare(a[0],b[0])).map(([name,h])=>'<tr><td>'+html(kind==='module'?moduleLabel(name):name)+'</td><td class="num-total">'+html(displayHours(h))+'</td></tr>').join('');
- $('overallClassRows').innerHTML=toRows(byClass,'class')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
- $('overallModuleRows').innerHTML=toRows(byModule,'module')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
- $('overallInfo').textContent=byClass.size+' classi · '+byModule.size+' moduli · '+displayHours(grand)+' ore complessive su tutti i mesi';
+ const {classes,modules,grand}=overallData();
+ $('overallClassRows').innerHTML=classes.map(([name,h])=>'<tr><td>'+html(name)+'</td><td class="num-total">'+html(displayHours(h))+'</td></tr>').join('')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
+ $('overallModuleRows').innerHTML=modules.map(r=>'<tr><td><strong>'+html(r.className)+'</strong> · '+html(r.module)+'</td><td class="num-total">'+html(displayHours(r.hours))+'</td></tr>').join('')+'<tr class="overall-grand"><td>Totale generale</td><td class="num-total">'+html(displayHours(grand))+'</td></tr>';
+ $('overallInfo').textContent=classes.length+' classi · '+modules.length+' abbinamenti classe/modulo · '+displayHours(grand)+' ore complessive su tutti i mesi';
 }
 function renderMonth(){const selected=rows.filter(r=>r.month===$('month').value&&has(r,'mclass','class')&&has(r,'mmodule','module')&&has(r,'mteacher','teacher'));const month=$('month').value;$('monthTitle').textContent='Griglia mensile · '+(month?fmtMonth.format(new Date(month+'-01T00:00:00Z')):'');$('statHours').textContent=displayHours(selected.reduce((a,r)=>a+r.hours,0));$('statClasses').textContent=new Set(selected.map(r=>r.site+'|'+r.class)).size;$('statModules').textContent=new Set(selected.map(r=>r.module)).size;$('statTeachers').textContent=new Set(selected.map(r=>r.teacher)).size;
 if(!month){$('monthGrid').innerHTML='<div class="empty">Nessun mese disponibile.</div>';return;}
@@ -266,6 +277,26 @@ $('week').addEventListener('change',()=>{populateWeekFilters();renderWeek()});$(
 for(const id of ['month','mclass','mmodule','mteacher'])$(id).addEventListener('change',()=>{populateMonthFilters();renderMonth()});
 function moveWeek(delta){const w=$('week');const i=w.selectedIndex+delta;if(i>=0&&i<w.options.length){w.selectedIndex=i;populateWeekFilters();renderWeek();}}
 $('prevWeek').addEventListener('click',()=>moveWeek(-1));$('nextWeek').addEventListener('click',()=>moveWeek(1));$('reset').addEventListener('click',()=>{for(const id of ['mclass','mmodule','mteacher'])$(id).value='';populateMonthFilters();renderMonth()});$('weekPrint').addEventListener('click',()=>print());$('monthPrint').addEventListener('click',()=>print());$('reloadW').addEventListener('click',load);$('reloadM').addEventListener('click',load);
+$('excel').addEventListener('click',()=>{
+ if(typeof XLSX==='undefined'){
+  $('error').textContent='La libreria Excel non è stata caricata. Verifica la connessione e riprova.';
+  $('error').classList.remove('hidden');return;
+ }
+ const workbook=XLSX.utils.book_new();
+ const addSheet=(name,headers,records,widths)=>{
+  const sheet=XLSX.utils.aoa_to_sheet([headers,...records]);
+  sheet['!cols']=widths.map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(workbook,sheet,name);
+ };
+ const monthHeaders=lastHeaders.slice();
+ const monthRecords=lastReport.map(r=>r.map((v,i)=>i>=3&&v!==''&&!Number.isNaN(Number(String(v).replace(',','.')))?Number(String(v).replace(',','.')):v));
+ addSheet('Griglia mensile',monthHeaders,monthRecords,monthHeaders.map((_,i)=>i===0?18:i===1?27:i===2?45:11));
+ const {classes,modules,grand}=overallData();
+ addSheet('Totali per classe',['Classe / corso','Ore totali'],[...classes.map(([c,h])=>[c,Math.round(h*100)/100]),['Totale generale',Math.round(grand*100)/100]],[28,17]);
+ addSheet('Moduli per classe',['Classe / corso','Modulo','Ore totali'],[...modules.map(r=>[r.className,r.module,Math.round(r.hours*100)/100]),['Totale generale','',Math.round(grand*100)/100]],[27,65,17]);
+ addSheet('Dettaglio lezioni',['Data','Sede','Classe / corso','Formatore','Modulo','Fascia oraria','Ore'],rows.map(r=>[r.date,siteLabel(r.site),r.class,r.teacher,moduleLabel(r.module),timeLabel(r),Math.round(r.hours*100)/100]),[16,35,24,30,60,20,12]);
+ XLSX.writeFile(workbook,'ESFO_orari_e_riepiloghi_'+$('month').value+'.xlsx');
+});
 $('csv').addEventListener('click',()=>{const escape=v=>'\"'+String(v).replaceAll('\"','\"\"')+'\"';const csv='\uFEFF'+[lastHeaders,...lastReport].map(r=>r.map(escape).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='griglia_orari_'+$('month').value+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)});
 (async()=>{
   if(!configReady()){showLogin('Prima di pubblicare: configura SUPABASE_PUBLISHABLE_KEY in index.html.');return;}
