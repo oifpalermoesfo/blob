@@ -49,12 +49,26 @@ def get_sheet_rows(csv_url):
     return rows
 
 
-def sync_supabase(supabase_url, secret_key, rows):
+def validate_supabase_url(supabase_url):
     parsed = urlparse(supabase_url)
-    if parsed.scheme != 'https' or not parsed.hostname or not parsed.hostname.endswith('.supabase.co') or parsed.username or parsed.password:
-        raise ValueError('SUPABASE_URL deve essere un endpoint HTTPS *.supabase.co.')
+    host = parsed.hostname or ''
+    if (parsed.scheme != 'https' or
+        not host.endswith('.supabase.co') or
+        host == '.supabase.co' or
+        parsed.username or parsed.password or parsed.port or
+        parsed.path not in ('', '/') or parsed.query or parsed.fragment):
+        raise ValueError(
+            'SUPABASE_URL non valido. Inserire soltanto l’URL del progetto, '
+            'ad esempio https://PROGETTO.supabase.co (senza /rest/v1, chiavi o spazi). '
+            'Verificare Repository Secrets e Repository Variables su GitHub.'
+        )
+    return supabase_url.rstrip('/')
+
+
+def sync_supabase(supabase_url, secret_key, rows):
+    supabase_url = validate_supabase_url(supabase_url)
     endpoint = f'{supabase_url.rstrip("/")}/rest/v1/orari?id=eq.1'
-    body = json.dumps({'dati': rows}, ensure_ascii=False).encode('utf-8')
+    body = json.dumps({'dati': rows, 'aggiornato_il': __import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}, ensure_ascii=False).encode('utf-8')
     req = Request(endpoint, data=body, method='PATCH', headers={
         'apikey': secret_key,
         'Content-Type': 'application/json',
@@ -81,6 +95,7 @@ def main():
     secret_key = require('SUPABASE_SECRET_KEY')
     if not secret_key.startswith('sb_secret_'):
         raise ValueError('Usare la nuova Supabase Secret API Key sb_secret_...')
+    validate_supabase_url(supabase_url)
     rows = get_sheet_rows(csv_url)
     sync_supabase(supabase_url, secret_key, rows)
 
