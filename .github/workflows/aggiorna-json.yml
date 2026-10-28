@@ -24,9 +24,29 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Diagnostica configurazione (nessun valore sensibile stampato)
+        env:
+          GOOGLE_SHEET_CSV_URL: ${{ vars.GOOGLE_SHEET_CSV_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          python - <<'PYCODE'
+          import os
+          from urllib.parse import urlparse
+          url = os.getenv('SUPABASE_URL', '').strip()
+          parsed = urlparse(url)
+          host = parsed.hostname or ''
+          print('Google CSV configurato:', bool(os.getenv('GOOGLE_SHEET_CSV_URL', '').strip()))
+          print('Supabase URL presente:', bool(url))
+          print('Supabase URL HTTPS:', parsed.scheme == 'https')
+          print('Supabase dominio corretto:', host.endswith('.supabase.co') and host != '.supabase.co')
+          print('Supabase URL senza percorsi extra:', parsed.path in ('', '/') and not parsed.query and not parsed.fragment)
+          print('Supabase Secret Key presente:', bool(os.getenv('SUPABASE_SECRET_KEY', '').strip()))
+          print('Supabase Secret Key nuovo formato:', os.getenv('SUPABASE_SECRET_KEY', '').strip().startswith('sb_secret_'))
+          PYCODE
       - name: Importa Google Sheets in Supabase
         env:
           GOOGLE_SHEET_CSV_URL: ${{ vars.GOOGLE_SHEET_CSV_URL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: python esporta_json.py
