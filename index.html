@@ -93,6 +93,12 @@
 .substitution-table th,.substitution-table td{font-size:11px;padding:8px;white-space:normal;overflow-wrap:anywhere}
 .substitution-table th:nth-last-child(-n+2),.substitution-table td:nth-last-child(-n+2){text-align:right;white-space:nowrap;width:85px}
 @media(max-width:760px){.substitution-table{min-width:700px}}
+
+/* Supplenze mensili: distinguono esclusivamente modulo e giornata interessati. */
+#monthGrid .matrix tr.month-substitute-row .module-cell{background:#fff8ed}
+#monthGrid .matrix .substitute-label{display:block;color:#9a570a;font-size:9px;font-weight:750;letter-spacing:.1px;margin-top:3px}
+#monthGrid .matrix .day-button.substitute-hours{background:#ffedd5!important;color:#9a3412!important;border:1px solid #ea9a35!important;font-weight:800}
+#monthGrid .matrix .month-subtotal{background:#fff3df;font-weight:800;color:#9a3412}
 </style>
 <script>
 // Rimuove eventuali credenziali finite nell'URL nelle versioni precedenti.
@@ -254,7 +260,7 @@ const iconModule='<svg class="detail-icon" viewBox="0 0 24 24" fill="none" strok
 const iconTeacher='<svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
 function renderWeek(){const selected=rows.filter(r=>r.week===$('week').value&&has(r,'wsite','site')&&has(r,'wclass','class'));const dateKey=$('week').value;if(!dateKey)return;const dates=Array.from({length:6},(_,i)=>dkey(addDays(dateKey,i)));const slots=sorted(selected.map(r=>Number.isFinite(r.start)?r.start+'|'+r.end:r.slot));$('weekTitle').textContent='Settimana '+labelWeek(dateKey);$('weekSummary').textContent=selected.length+' fasce · '+displayHours(selected.reduce((a,r)=>a+r.hours,0))+' ore';if(!slots.length){$('weekGrid').innerHTML='<div class="empty">Nessuna lezione per i filtri selezionati.</div>';return;}
 let out='<table class="timetable"><thead><tr><th>Orario</th>'+dates.map((d,i)=>'<th>'+days[i]+'<br>'+html(fmtDate.format(new Date(d+'T00:00:00Z')))+'</th>').join('')+'</tr></thead><tbody>';
-for(const slot of slots){const inSlot=selected.filter(r=>(Number.isFinite(r.start)?r.start+'|'+r.end:r.slot)===slot);const first=inSlot[0];out+='<tr><td class="time">'+html(first.slot)+'</td>';for(const d of dates){let hits=inSlot.filter(r=>r.date===d).sort((a,b)=>coll.compare(a.class,b.class));out+='<td>'+(!hits.length?'<div class="empty">—</div>':hits.map(r=>'<div class="event"><div class="mod">'+iconModule+html(moduleLabel(r.module))+'</div><div class="teacher">'+iconTeacher+html(r.teacher)+'</div>'+(r.sub?'<small class="sub-absent">'+html(r.sub)+'</small>':'')+(r.sub?'<div class="extra">Supplito: '+html(r.sub)+'</div>':'')+($('wclass').value?'':'<div class="site">'+html(r.class)+'</div>')+($('wsite').value?'':'<div class="site">'+html(siteLabel(r.site))+'</div>')+'</div>').join(''))+'</td>';}out+='</tr>';}out+='</tbody></table>';$('weekGrid').innerHTML=out;}
+for(const slot of slots){const inSlot=selected.filter(r=>(Number.isFinite(r.start)?r.start+'|'+r.end:r.slot)===slot);const first=inSlot[0];out+='<tr><td class="time">'+html(first.slot)+'</td>';for(const d of dates){let hits=inSlot.filter(r=>r.date===d).sort((a,b)=>coll.compare(a.class,b.class));out+='<td>'+(!hits.length?'<div class="empty">—</div>':hits.map(r=>'<div class="event"><div class="mod">'+iconModule+html(moduleLabel(r.module))+'</div><div class="teacher">'+iconTeacher+html(r.teacher)+'</div>'+(r.sub?'<small class="sub-absent">'+html(r.sub)+'</small>':'')+($('wclass').value?'':'<div class="site">'+html(r.class)+'</div>')+($('wsite').value?'':'<div class="site">'+html(siteLabel(r.site))+'</div>')+'</div>').join(''))+'</td>';}out+='</tr>';}out+='</tbody></table>';$('weekGrid').innerHTML=out;}
 let windowMonthDetails=[];
 function teacherColor(name){let h=0;for(const c of name)h=((h*31)+c.charCodeAt(0))>>>0;return 't'+(h%8);}
 function monthLength(month){const [y,m]=month.split('-').map(Number);return new Date(Date.UTC(y,m,0)).getUTCDate();}
@@ -302,18 +308,22 @@ if(!month){$('monthGrid').innerHTML='<div class="empty">Nessun mese disponibile.
 const daysInMonth=rangeDays(month);
 const groups=new Map();
 windowMonthDetails=[];
-for(const r of selected){const values=[r.class,r.teacher,r.module];const k=JSON.stringify(values);if(!groups.has(k))groups.set(k,{values,days:new Map(),hours:0,fasce:0});const g=groups.get(k);const d=dayNum(r.date);if(!g.days.has(d))g.days.set(d,[]);g.days.get(d).push(r);g.hours+=r.hours;g.fasce++;}
-const report=[...groups.values()].sort((a,b)=>{for(let i=0;i<a.values.length;i++){const c=coll.compare(a.values[i],b.values[i]);if(c)return c;}return 0;});
+for(const r of selected){const isSub=Boolean(r.sub);const values=[r.class,r.teacher,r.module];
+// Le supplenze non si mischiano alle lezioni ordinarie dello stesso modulo.
+// Per ogni docente assente viene creata una riga dedicata, solo per il modulo sostituito.
+const absent=isSub?r.sub:'';const k=JSON.stringify([...values,isSub,absent]);
+if(!groups.has(k))groups.set(k,{values,isSub,absent,days:new Map(),hours:0,fasce:0});const g=groups.get(k);const d=dayNum(r.date);if(!g.days.has(d))g.days.set(d,[]);g.days.get(d).push(r);g.hours+=r.hours;g.fasce++;}
+const report=[...groups.values()].sort((a,b)=>{for(let i=0;i<a.values.length;i++){const c=coll.compare(a.values[i],b.values[i]);if(c)return c;}return Number(a.isSub)-Number(b.isSub)||coll.compare(a.absent,b.absent);});
 lastHeaders=['Classe / corso','Formatore','Modulo',...daysInMonth,'Totale ore'];
-lastReport=report.map(g=>{const row=[g.values[0],g.values[1],moduleLabel(g.values[2])];for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);row.push(items.length?displayHours(items.reduce((sum,x)=>sum+x.hours,0)):'');}row.push(displayHours(g.hours));return row;});
+lastReport=report.map(g=>{const row=[g.values[0],g.values[1],moduleLabel(g.values[2])+(g.isSub?' [SUPPLENZA: '+g.absent+']':'')];for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);row.push(items.length?displayHours(items.reduce((sum,x)=>sum+x.hours,0)):'');}row.push(displayHours(g.hours));return row;});
 $('rowCount').textContent=report.length+' righe · '+selected.length+' lezioni';
 if(!report.length){$('monthGrid').innerHTML='<div class="empty">Nessun dato per i filtri selezionati.</div>';return;}
-let out='<div class="legend"><span>Ogni cella indica le ore del giorno. Clicca per il dettaglio.</span></div><table class="matrix"><thead><tr>'+
+let out='<div class="legend"><span>Ore giornaliere · Le supplenze sono indicate in arancione e separate per modulo e docente assente. Clicca per il dettaglio.</span></div><table class="matrix"><thead><tr>'+
 '<th class="col-class">Classe / corso</th><th class="col-teacher">Formatore</th><th class="col-module">Modulo</th>'+
 daysInMonth.map(d=>'<th class="day"><span class="daynum">'+d+'</span></th>').join('')+'<th class="month-total">Totale ore</th></tr></thead><tbody>';
-for(const g of report){out+='<tr>'+'<td class="class-cell col-class" title="'+html(g.values[0])+'">'+html(g.values[0])+'</td>'+'<td class="teacher-cell col-teacher"><span class="teacher-tag '+teacherColor(g.values[1])+'">'+html(g.values[1])+'</span>'+(sorted([...g.days.values()].flat().filter(r=>r.sub).map(r=>r.sub)).length?'<small class="sub-absent">'+html(sorted([...g.days.values()].flat().filter(r=>r.sub).map(r=>r.sub)).join(', '))+'</small>':'')+'</td>'+'<td class="module-cell col-module" title="'+html(moduleLabel(g.values[2]))+'">'+html(moduleLabel(g.values[2]))+'</td>';
-for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);if(items.length){const tip=items.map(x=>fmtDate.format(new Date(x.date+'T00:00:00Z'))+' · '+timeLabel(x)+(x.sub?' · Supplito: '+x.sub:'')) .join('\n');const index=windowMonthDetails.push({values:g.values,items:items.slice(),date:items[0].date})-1;const ore=displayHours(items.reduce((total,r)=>total+r.hours,0));out+='<td class="day cell-active"><button type="button" class="day-button '+teacherColor(g.values[1])+'" data-day-detail="'+index+'" title="'+html(tip)+'" aria-label="Dettagli lezioni del '+html(fmtDate.format(new Date(items[0].date+'T00:00:00Z')))+' · '+html(ore)+' ore">'+html(ore)+'</button></td>';}else{out+='<td class="day"><span class="marker off">&nbsp;</span></td>';}}
-out+='<td class="month-total"><strong>'+html(displayHours(g.hours))+'</strong></td></tr>';}
+for(const g of report){out+='<tr'+(g.isSub?' class="month-substitute-row"':'')+'>'+'<td class="class-cell col-class" title="'+html(g.values[0])+'">'+html(g.values[0])+'</td>'+'<td class="teacher-cell col-teacher"><span class="teacher-tag '+teacherColor(g.values[1])+'">'+html(g.values[1])+'</span>'+(g.isSub?'<small class="sub-absent">'+html(g.absent)+'</small>':'')+'</td>'+'<td class="module-cell col-module" title="'+html(moduleLabel(g.values[2]))+'">'+html(moduleLabel(g.values[2]))+(g.isSub?'<span class="substitute-label">↳ Supplenza</span>':'')+'</td>';
+for(const d of daysInMonth){const items=(g.days.get(d)||[]).sort((a,b)=>a.start-b.start);if(items.length){const tip=items.map(x=>fmtDate.format(new Date(x.date+'T00:00:00Z'))+' · '+timeLabel(x)+(x.sub?' · Assente: '+x.sub:'')) .join('\n');const index=windowMonthDetails.push({values:g.values,items:items.slice(),date:items[0].date})-1;const ore=displayHours(items.reduce((total,r)=>total+r.hours,0));out+='<td class="day cell-active"><button type="button" class="day-button '+(g.isSub?'substitute-hours':teacherColor(g.values[1]))+'" data-day-detail="'+index+'" title="'+html(tip)+'" aria-label="Dettagli lezioni del '+html(fmtDate.format(new Date(items[0].date+'T00:00:00Z')))+' · '+html(ore)+' ore">'+html(ore)+'</button></td>';}else{out+='<td class="day"><span class="marker off">&nbsp;</span></td>';}}
+out+='<td class="month-total '+(g.isSub?'month-subtotal':'')+'"><strong>'+html(displayHours(g.hours))+'</strong></td></tr>';}
 out+='</tbody></table>';$('monthGrid').innerHTML=out;}
 function closeDayDialog(){ $('dayDialog').classList.add('hidden'); if(lastFocusedDay && lastFocusedDay.isConnected)lastFocusedDay.focus(); }
 let lastFocusedDay=null;
