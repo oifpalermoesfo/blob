@@ -99,6 +99,7 @@
 #monthGrid .matrix .substitute-label{display:block;color:#9a570a;font-size:9px;font-weight:750;letter-spacing:.1px;margin-top:3px}
 #monthGrid .matrix .day-button.substitute-hours{background:#ffedd5!important;color:#9a3412!important;border:1px solid #ea9a35!important;font-weight:800}
 #monthGrid .matrix .month-subtotal{background:#fff3df;font-weight:800;color:#9a3412}
+.tabs-inner{display:flex;gap:8px;flex-wrap:wrap}.tab-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.tab-link:hover{background:#eaf2fc;color:var(--navy)}
 </style>
 <script>
 // Rimuove eventuali credenziali finite nell'URL nelle versioni precedenti.
@@ -132,7 +133,7 @@
 <div id="appShell" hidden>
 <div class="wrap">
 <header class="hero"><div class="brand"><img class="brand-logo" src="https://esforario.francescorizzoweb.it/images/Logo-ESFO.png" alt="Logo ESFO" width="145" height="57"><div class="brand-text"><h1>Orari formativi</h1><p>Calendario settimanale e griglia mensile delle lezioni</p></div></div><div class="auth-actions"><span class="pill" id="status" aria-live="polite">Caricamento dati…</span><button class="logout" id="logout" type="button">Esci</button></div></header>
-<nav class="tabs" role="tablist" aria-label="Modalità di consultazione"><button id="tabWeek" class="tab" role="tab" aria-selected="true" type="button">▦ Orario settimanale</button><button id="tabMonth" class="tab" role="tab" aria-selected="false" type="button">▤ Griglia mensile</button></nav>
+<nav class="tabs" aria-label="Menu orari"><div role="tablist" aria-label="Modalità di consultazione" class="tabs-inner"><button id="tabWeek" class="tab" role="tab" aria-selected="true" type="button">▦ Orario settimanale</button><button id="tabMonth" class="tab" role="tab" aria-selected="false" type="button">▤ Griglia mensile</button></div><a class="tab tab-link" href="./questasettimana.html" target="_blank" rel="noopener noreferrer" aria-label="Questa settimana (apre una nuova scheda)">↗ Questa settimana</a></nav>
 <div id="error" class="notice error hidden" role="alert"></div>
 <section id="viewWeek">
 <div class="panel"><div class="heading"><h2>Seleziona la settimana e la classe</h2><span class="small">Settimane individuate automaticamente dalle date del JSON</span></div><div class="filters">
