@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orario settimanale formatori</title>
+<style>
+:root{--blu:#174d76;--blu-chiaro:#eaf2f8;--riga:#f8fafc;--bordo:#dce5ed;--rosa:#fff0f2;--testo:#243447}
+*{box-sizing:border-box}
+body{font:14px/1.45 Arial,Helvetica,sans-serif;color:var(--testo);background:#fff;margin:0;padding:12px}
+.widget{width:100%;max-width:1200px;margin:auto}
+.controlli{background:#f5f8fb;border:1px solid var(--bordo);padding:16px;border-radius:10px;margin-bottom:14px}
+label{display:block;font-weight:700;color:var(--blu);margin-bottom:8px;font-size:15px}
+select{width:100%;padding:11px 12px;border:1px solid #b6c8d6;border-radius:7px;font:inherit;background:#fff;color:var(--testo)}
+.periodo{margin-top:9px;color:#506477;font-size:12px}
+.intestazione{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:16px 0 10px}
+.nome{font-size:18px;font-weight:700;color:var(--blu)}
+.conteggio{font-size:12px;color:#5f7180}
+.azioniriga{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn-pdf{appearance:none;border:0;background:var(--blu);color:#fff;padding:10px 14px;border-radius:7px;font:700 13px Arial,sans-serif;cursor:pointer}
+.btn-pdf:hover{background:#103c5d}
+.btn-pdf:disabled{opacity:.6;cursor:wait}
+.stato-pdf{font-size:12px;color:#8a2639}
+/* Solo le giornate scorrono: selettore, periodo e intestazione rimangono fermi. */
+#giorni{height:clamp(280px,calc(100dvh - 255px),850px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:5px}
+.giorno{margin-bottom:15px;border:1px solid var(--bordo);border-radius:9px;overflow:hidden}
+.giorno-titolo{background:var(--blu-chiaro);color:var(--blu);font-size:14px;font-weight:700;padding:10px 12px;border-left:4px solid var(--blu);text-transform:capitalize}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{background:#f7fafc;text-transform:uppercase;letter-spacing:.035em;font-size:11px;color:#526679;text-align:left;padding:9px 11px;border-bottom:1px solid var(--bordo)}
+td{padding:10px 11px;border-top:1px solid #e7edf1;vertical-align:top;overflow-wrap:anywhere;font-size:13px}
+tbody tr:first-child td{border-top:0}
+tbody tr:nth-child(even){background:var(--riga)}
+tbody tr.supplenza{background:var(--rosa)}
+.ora{white-space:nowrap;font-weight:700;color:var(--blu)}
+.classe{font-weight:700}
+.etichetta{display:inline-block;background:#f7c7d0;color:#8a2639;border-radius:4px;font-size:10px;font-weight:700;padding:3px 6px;margin-top:5px}
+.nota{display:flex;align-items:center;gap:7px;color:#536675;font-size:12px;margin:12px 0}
+.quadratino{display:inline-block;width:13px;height:13px;border:1px solid #f5bdc6;background:var(--rosa);border-radius:3px}
+.messaggio{padding:18px 8px;text-align:center;color:#607587}
+.nascosto{display:none}
+@media(max-width:620px){#giorni{height:clamp(250px,calc(100dvh - 245px),750px);padding-right:2px}body{padding:8px}.controlli{padding:13px}.nome{font-size:16px}thead{display:none}table,tbody,tr,td{display:block;width:100%}tbody tr{padding:10px 12px;border-top:1px solid var(--bordo)}tbody tr:first-child{border-top:0}td{padding:3px 0;border:0;font-size:13px}td::before{content:attr(data-label) ': ';font-weight:700;color:#637385}td.ora{font-size:15px}td.ora::before{content:''}.giorno-titolo{padding:10px}}
+</style>
+</head>
+<body>
+<div class="widget">
+  <div class="controlli">
+    <label for="formatoreSelect">Seleziona un formatore</label>
+    <select id="formatoreSelect"><option value="">-- Scegli formatore --</option></select>
+    <div class="periodo" id="periodo">Caricamento calendario settimanale</div>
+  </div>
+  <div id="messaggio" class="messaggio">Seleziona un formatore per visualizzare il suo orario.</div>
+  <div id="risultati" class="nascosto">
+    <div class="intestazione"><div id="nome" class="nome"></div><div class="azioniriga"><div id="conteggio" class="conteggio"></div><button type="button" id="scaricaPdf" class="btn-pdf">Scarica PDF</button></div></div><div id="statoPdf" class="stato-pdf" role="status" aria-live="polite"></div>
+    <div id="giorni"></div>
+    <div class="nota"><span class="quadratino"></span> Lo sfondo rosa indica una supplenza.</div>
+  </div>
+</div>
+<!-- Librerie per creare un PDF scaricabile, senza aprire la stampa del sito. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const jsonUrl='https://raw.githubusercontent.com/oifpalermoesfo/orariosettimanaleformatori/refs/heads/main/orario_estratto.json';
+const select=document.getElementById('formatoreSelect');
+const periodo=document.getElementById('periodo');
+const messaggio=document.getElementById('messaggio');
+const risultati=document.getElementById('risultati');
+const giorni=document.getElementById('giorni');
+const scaricaPdf=document.getElementById('scaricaPdf');
+const statoPdf=document.getElementById('statoPdf');
+let dati=[];
+let impegniSelezionati=[];
+function leggiData(t){const m=/^(\d{1,2})-(\d{1,2})-(\d{4})$/.exec(String(t||'').trim());if(!m)return null;const d=new Date(+m[3],+m[2]-1,+m[1]);return d.getFullYear()===+m[3]&&d.getMonth()===+m[2]-1&&d.getDate()===+m[1]?d:null}
+function testo(tag,value,classe){const el=document.createElement(tag);el.textContent=value==null?'':String(value);if(classe)el.className=classe;return el}
+function dataLunga(d){return new Intl.DateTimeFormat('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(d)}
+function dataBreve(d){return new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}).format(d)}
+function eSupplenza(r){const v=String(r.SUPPLITO??'').trim();return v!==''&&v!=='0'}
+function aggiorna(){const nome=select.value;giorni.replaceChildren();giorni.scrollTop=0;statoPdf.textContent='';impegniSelezionati=[];if(!nome){risultati.classList.add('nascosto');messaggio.classList.remove('nascosto');messaggio.textContent='Seleziona un formatore per visualizzare il suo orario.';return}
+ const impegni=dati.filter(r=>String(r.FORMATORE??'').trim()===nome).sort((a,b)=>{const ad=leggiData(a.DATAOR)?.getTime()??Infinity,bd=leggiData(b.DATAOR)?.getTime()??Infinity;return ad-bd||String(a.INIZIO??'').localeCompare(String(b.INIZIO??''),'it',{numeric:true})});
+ impegniSelezionati=impegni;
+ document.getElementById('nome').textContent=nome;
+ document.getElementById('conteggio').textContent=impegni.length+' impegni';
+ const raggruppati=new Map();for(const r of impegni){const k=String(r.DATAOR??'Data non disponibile');if(!raggruppati.has(k))raggruppati.set(k,[]);raggruppati.get(k).push(r)}
+ for(const [data,righe] of raggruppati){const blocco=document.createElement('section');blocco.className='giorno';blocco.appendChild(testo('div',leggiData(data)?dataLunga(leggiData(data)):data,'giorno-titolo'));
+ const tabella=document.createElement('table');const thead=document.createElement('thead');const head=document.createElement('tr');[['Orario','18%'],['Modulo','37%'],['Classe','15%'],['Sede','30%']].forEach(([nome,larghezza])=>{const th=testo('th',nome);th.style.width=larghezza;head.appendChild(th)});thead.appendChild(head);tabella.appendChild(thead);const body=document.createElement('tbody');
+ for(const r of righe){const tr=document.createElement('tr');const sup=eSupplenza(r);if(sup)tr.className='supplenza';const fields=[['Orario',r.ORARIO,'ora'],['Modulo',r.MODULO,''],['Classe',r.CLASSE,'classe'],['Sede',r.SEDE,'']];for(const [label,value,cls] of fields){const td=testo('td',value,cls);td.setAttribute('data-label',label);if(label==='Modulo'&&sup){td.appendChild(document.createElement('br'));td.appendChild(testo('span','SUPPLENZA','etichetta'))}tr.appendChild(td)}body.appendChild(tr)}tabella.appendChild(body);blocco.appendChild(tabella);giorni.appendChild(blocco)}
+ messaggio.classList.add('nascosto');risultati.classList.remove('nascosto');}
+fetch(jsonUrl,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(json=>{if(!Array.isArray(json))throw Error('Il JSON non contiene un elenco');dati=json;const nomi=[...new Set(dati.map(d=>String(d.FORMATORE??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));for(const nome of nomi){const opt=document.createElement('option');opt.value=nome;opt.textContent=nome;select.appendChild(opt)}const date=dati.map(r=>leggiData(r.DATAOR)).filter(Boolean).sort((a,b)=>a-b);periodo.textContent=date.length?'Periodo: '+dataBreve(date[0])+' al '+dataBreve(date[date.length-1]):'Calendario settimanale';if(!nomi.length)messaggio.textContent='Nessun formatore disponibile.'}).catch(err=>{console.error('Errore caricamento orario:',err);periodo.textContent='Calendario non disponibile';messaggio.textContent='Impossibile caricare gli orari. Riprova aggiornando la pagina.'});
+select.addEventListener('change',aggiorna);
+// Il PDF contiene esclusivamente gli impegni del formatore selezionato.
+scaricaPdf.addEventListener('click', () => {
+  const nome = select.value;
+  if (!nome || !impegniSelezionati.length) {
+    statoPdf.textContent='Nessun impegno da esportare.';
+    return;
+  }
+  const JsPDF = window.jspdf && window.jspdf.jsPDF;
+  if (!JsPDF) {
+    statoPdf.textContent='Libreria PDF non caricata: controlla la connessione e aggiorna la pagina.';
+    return;
+  }
+  scaricaPdf.disabled = true;
+  statoPdf.textContent='';
+  try {
+    const doc = new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    if (typeof doc.autoTable !== 'function') throw Error('Modulo tabelle PDF non disponibile');
+
+    const date = impegniSelezionati.map(r=>leggiData(r.DATAOR)).filter(Boolean).sort((a,b)=>a-b);
+    const intervallo = date.length ? dataBreve(date[0])+' - '+dataBreve(date[date.length-1]) : 'Calendario settimanale';
+    const righe = [];
+    let dataPrecedente = null;
+    for (const r of impegniSelezionati) {
+      const giorno = String(r.DATAOR??'Data non disponibile');
+      if (giorno !== dataPrecedente) {
+        const parsed = leggiData(giorno);
+        righe.push([{content: parsed ? dataLunga(parsed) : giorno, colSpan:4,
+          styles:{fillColor:[234,242,248],textColor:[23,77,118],fontStyle:'bold',fontSize:10,cellPadding:3}}]);
+        dataPrecedente = giorno;
+      }
+      const sup = eSupplenza(r);
+      const valori = [String(r.ORARIO??''),String(r.MODULO??'')+(sup?'  [SUPPLENZA]':''),String(r.CLASSE??''),String(r.SEDE??'')];
+      righe.push(valori.map(t => ({content:t,styles:sup?{fillColor:[255,230,233]}:{}})));
+    }
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(16);
+    doc.setTextColor(23,77,118);
+    doc.text('Orario settimanale formatore', 12, 16);
+    doc.setFontSize(12);
+    doc.text(nome,12,24);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.setTextColor(90,105,120);
+    doc.text('Periodo: '+intervallo,12,31);
+
+    doc.autoTable({
+      startY:36,
+      margin:{left:12,right:12,bottom:15},
+      head:[['Orario','Modulo','Classe','Sede']],
+      body:righe,
+      theme:'grid',
+      styles:{font:'helvetica',fontSize:9,cellPadding:3,overflow:'linebreak',lineColor:[220,229,237],lineWidth:.15},
+      headStyles:{fillColor:[23,77,118],textColor:[255,255,255],fontStyle:'bold'},
+      columnStyles:{0:{cellWidth:40},1:{cellWidth:105},2:{cellWidth:35},3:{cellWidth:'auto'}},
+      didDrawPage: () => {
+        const p=doc.internal.getNumberOfPages();
+        doc.setFontSize(8);doc.setTextColor(110,120,130);
+        doc.text('Pagina '+p, doc.internal.pageSize.getWidth()-14,doc.internal.pageSize.getHeight()-7,{align:'right'});
+      }
+    });
+    const nomeFile = nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'');
+    doc.save('Orario_'+(nomeFile||'Formatore')+'_'+(date.length?dataBreve(date[0]).replaceAll('/','-'):'settimana')+'.pdf');
+  } catch (err) {
+    console.error('Errore nella generazione del PDF:',err);
+    statoPdf.textContent='Non è stato possibile generare il PDF. Riprova.';
+  } finally {
+    scaricaPdf.disabled=false;
+  }
+});
+
+</script>
+</body>
+</html>
