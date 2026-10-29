@@ -22,7 +22,7 @@ select{width:100%;padding:11px 12px;border:1px solid #b6c8d6;border-radius:7px;f
 .btn-pdf:disabled{opacity:.6;cursor:wait}
 .stato-pdf{font-size:12px;color:#8a2639}
 /* Solo le giornate scorrono: selettore, periodo e intestazione rimangono fermi. */
-#giorni{height:clamp(280px,calc(100dvh - 255px),850px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:5px}
+#giorni{height:clamp(280px,calc(100dvh - 385px),850px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:5px}
 .giorno{margin-bottom:15px;border:1px solid var(--bordo);border-radius:9px;overflow:hidden}
 .giorno-titolo{background:var(--blu-chiaro);color:var(--blu);font-size:14px;font-weight:700;padding:10px 12px;border-left:4px solid var(--blu);text-transform:capitalize}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
@@ -38,10 +38,31 @@ tbody tr.supplenza{background:var(--rosa)}
 .quadratino{display:inline-block;width:13px;height:13px;border:1px solid #f5bdc6;background:var(--rosa);border-radius:3px}
 .messaggio{padding:18px 8px;text-align:center;color:#607587}
 .nascosto{display:none}
-@media(max-width:620px){#giorni{height:clamp(250px,calc(100dvh - 245px),750px);padding-right:2px}body{padding:8px}.controlli{padding:13px}.nome{font-size:16px}thead{display:none}table,tbody,tr,td{display:block;width:100%}tbody tr{padding:10px 12px;border-top:1px solid var(--bordo)}tbody tr:first-child{border-top:0}td{padding:3px 0;border:0;font-size:13px}td::before{content:attr(data-label) ': ';font-weight:700;color:#637385}td.ora{font-size:15px}td.ora::before{content:''}.giorno-titolo{padding:10px}}
+@media(max-width:620px){#giorni{height:clamp(250px,calc(100dvh - 355px),750px);padding-right:2px}body{padding:8px}.controlli{padding:13px}.nome{font-size:16px}thead{display:none}table,tbody,tr,td{display:block;width:100%}tbody tr{padding:10px 12px;border-top:1px solid var(--bordo)}tbody tr:first-child{border-top:0}td{padding:3px 0;border:0;font-size:13px}td::before{content:attr(data-label) ': ';font-weight:700;color:#637385}td.ora{font-size:15px}td.ora::before{content:''}.giorno-titolo{padding:10px}}
+
+/* Intestazione coordinata con Orari Formativi ESFO */
+body{background:#f3f6fa;padding:0}
+.esfo-page{max-width:1500px;margin:0 auto;padding:22px}
+.esfo-hero{background:linear-gradient(115deg,#12345b,#245e9f);color:#fff;padding:26px 30px;border-radius:18px;display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:20px}
+.esfo-brand{display:flex;align-items:center;gap:18px;min-width:0}
+.esfo-brand-logo{display:block;width:145px;max-width:30vw;height:auto;background:#fff;padding:7px;border-radius:10px;flex-shrink:0}
+.esfo-brand-text{min-width:0}
+.esfo-hero h1{color:#fff;font:700 27px/1.25 system-ui,-apple-system,'Segoe UI',sans-serif;margin:0 0 5px}
+.esfo-hero p{color:#dbeaff;margin:0;font:14px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif}
+.esfo-home{color:#fff;text-decoration:none;font:700 13px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif;border:1px solid #ffffff77;background:#ffffff20;padding:10px 14px;border-radius:10px;white-space:nowrap}
+.esfo-home:hover,.esfo-home:focus-visible{background:#ffffff38}
+@media(max-width:700px){.esfo-page{padding:10px}.esfo-hero{padding:17px;flex-direction:column;align-items:flex-start}.esfo-brand{gap:12px}.esfo-brand-logo{width:105px}.esfo-hero h1{font-size:21px}}
 </style>
 </head>
 <body>
+<div class="esfo-page">
+<header class="esfo-hero">
+  <div class="esfo-brand">
+    <img class="esfo-brand-logo" src="https://esforario.francescorizzoweb.it/images/Logo-ESFO.png" alt="Logo ESFO" width="145" height="57">
+    <div class="esfo-brand-text"><h1>Orari formativi</h1><p>Calendario settimanale dei formatori</p></div>
+  </div>
+  <a class="esfo-home" href="./index.html">← Torna agli orari</a>
+</header>
 <div class="widget">
   <div class="controlli">
     <label for="formatoreSelect">Seleziona un formatore</label>
@@ -54,6 +75,7 @@ tbody tr.supplenza{background:var(--rosa)}
     <div id="giorni"></div>
     <div class="nota"><span class="quadratino"></span> Lo sfondo rosa indica una supplenza.</div>
   </div>
+</div>
 </div>
 <!-- Librerie per creare un PDF scaricabile, senza aprire la stampa del sito. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
