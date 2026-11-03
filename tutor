@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KodeK • Calendari tutor</title>
+<style>
+:root{
+  font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  color:#23334b;
+  background:#f2f5f9;
+  --blue:#12376c;
+  --blue2:#1e63b6;
+  --light:#eaf2ff;
+  --border:#dfe7f1;
+  --text:#23334b;
+  --muted:#6d7f98;
+  --white:#ffffff;
+  --shadow:0 8px 24px rgba(27,59,103,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#eef3f9 0,#f5f7fb 280px,#f2f5f9 100%)}
+.top{background:linear-gradient(135deg,#12376c,#1c4f95);color:#fff;border-bottom:4px solid #2c75d7}
+.head{max-width:1480px;margin:auto;padding:20px 28px;display:flex;align-items:center;gap:16px}
+.logo{background:#fff;color:#164b91;border-radius:14px;font-weight:900;padding:11px 14px;font-size:23px;letter-spacing:-1px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.tagline{font-size:12px;opacity:.85}
+.title{font-size:22px;font-weight:760}
+.layout{max-width:1480px;margin:24px auto;padding:0 22px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+.bar{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
+h1{font-size:28px;line-height:1.1;margin:0 0 6px}
+p{margin:5px 0;color:#66758b}
+.button{border:1px solid #cbd6e5;background:#fff;color:#1c4d91;border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer;font:inherit;transition:.15s ease}
+.button.primary{background:var(--blue2);color:#fff;border-color:var(--blue2)}
+.button.active{background:#e8f1ff;border-color:#9fc1f0;color:#184b8f}
+.button:hover{transform:translateY(-1px);filter:brightness(.98)}
+.button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.filters{display:grid;grid-template-columns:repeat(3,minmax(170px,1fr)) minmax(210px,1.2fr);gap:14px;margin-top:16px}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:#27425f}
+select,input[type=search]{width:100%;font:inherit;border:1px solid #cad6e5;border-radius:10px;padding:11px 12px;background:#fff;color:#203550}
+.notice{border-left:4px solid #2872cb;background:#f0f6ff;color:#25446d;border-radius:8px;padding:12px 14px;margin:15px 0 4px;font-size:13px}
+.error{border-left-color:#c13a3a;background:#fff0f0;color:#862e2e}
+.week{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.week strong{min-width:290px;text-align:center;font-size:18px;color:#1f3f6a}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin-top:16px}
+.metric{background:linear-gradient(180deg,#f6f9ff,#eef4ff);border:1px solid #dce7fb;border-radius:14px;padding:14px 15px}
+.metric .num{display:block;font-size:24px;font-weight:800;color:#17488a;line-height:1}
+.metric .lab{display:block;margin-top:6px;font-size:12px;letter-spacing:.02em;color:#58718f;text-transform:uppercase;font-weight:700}
+.subbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.muted{font-size:13px;color:var(--muted)}
+.viewtoggle{display:flex;gap:8px;flex-wrap:wrap}
+.hidden{display:none!important}
+.empty{padding:50px 20px;text-align:center;color:#72829b;border:1px dashed #d5dfec;border-radius:14px;background:#fafcff}
+
+/* Agenda: layout fluido adatto anche ai riquadri di Google Sites */
+.agenda-wrap{overflow:visible;padding-bottom:4px}
+.agenda{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;min-width:0}
+.daycol{min-width:0;background:#f8fbff;border:1px solid #e1eaf5;border-radius:16px;padding:12px;display:flex;flex-direction:column;min-height:430px}
+.dayhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border-bottom:1px solid #e7eef8;padding-bottom:10px;margin-bottom:10px}
+.daytitle{font-size:16px;font-weight:800;color:#163f78;line-height:1.1}
+.daydate{font-size:12px;color:#6b809a;margin-top:3px}
+.daycount{background:#e8f1ff;color:#184d92;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+.daycards{display:flex;flex-direction:column;gap:10px}
+.event{background:#fff;border:1px solid #dde8f7;border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(28,77,145,.05)}
+.event:hover{box-shadow:0 8px 18px rgba(28,77,145,.10)}
+.timepill{display:inline-block;background:#e8f2ff;color:#174d92;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;margin-bottom:10px}
+.event .class{font-size:16px;font-weight:800;color:#1f3551;line-height:1.15;margin-bottom:7px}
+.meta{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#50657f}
+.meta .row{display:flex;gap:8px;align-items:flex-start}
+.meta .label{font-weight:700;color:#34557d;min-width:46px}
+.noevents{margin-top:auto;padding:14px;border:1px dashed #d8e2ef;border-radius:12px;text-align:center;color:#7b8da2;background:#fcfdff;font-size:13px}
+
+/* List view */
+.listwrap{display:flex;flex-direction:column;gap:14px}
+.daygroup{border:1px solid #e2e9f4;border-radius:16px;overflow:hidden;background:#fbfdff}
+.daygroup-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:14px 16px;background:#eef4ff;border-bottom:1px solid #dfe8f5}
+.daygroup-title{font-size:17px;font-weight:800;color:#173f79}
+.daygroup-count{background:#fff;color:#1a4d90;border:1px solid #d8e5fb;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}
+.cardlist{padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.listcard{background:#fff;border:1px solid #dce5f3;border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(27,59,103,.05)}
+.listcard .toprow{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+.listcard .time{background:#e8f2ff;color:#174d92;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+.listcard .class{font-size:16px;font-weight:800;color:#1f3551}
+.listcard .line{font-size:13px;color:#5d728a;margin-top:4px}
+
+.footer{text-align:center;color:#8090a6;font-size:12px;padding:0 0 25px}
+@media(max-width:1100px){
+  .filters{grid-template-columns:1fr 1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+  .agenda{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+}
+@media(max-width:700px){
+  .layout{padding:0 12px}
+  .head{padding:16px}
+  .title{font-size:18px}
+  h1{font-size:24px}
+  .filters{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+  .agenda{grid-template-columns:1fr}
+  .week strong{min-width:0;text-align:left}
+}
+@media(max-width:480px){
+  .metrics{grid-template-columns:1fr 1fr}
+  .panel{padding:14px}
+  .daycol{min-height:0}
+}
+
+/* Google Sites: il contenitore incorporato determina la larghezza reale. */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+.layout,.panel,.agenda-wrap,#agendaPane,#listPane,.agenda,.daycol,.event,.meta{max-width:100%;min-width:0}
+.layout{width:100%}
+.agenda-wrap{overflow-x:hidden!important;width:100%}
+.agenda{width:100%;min-width:0!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr))!important;align-items:start}
+.daycol{min-width:0!important;min-height:0}
+.event,.meta,.meta .row,.event .class,.daytitle{overflow-wrap:anywhere;word-break:normal}
+.filters>*{min-width:0}
+@media(max-width:760px){.agenda{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:520px){.agenda{grid-template-columns:minmax(0,1fr)!important}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.head{min-width:0}}
+
+.table-scroll{overflow-x:auto;max-width:100%;margin-top:16px}
+.month-table{width:100%;border-collapse:collapse;font-size:14px;min-width:650px}
+.month-table th,.month-table td{padding:12px 10px;text-align:left;border-bottom:1px solid #e3eaf4;vertical-align:top}
+.month-table th{background:#eff5ff;color:#1b477c;font-weight:750}
+.month-table tbody tr:nth-child(even){background:#fafcff}
+.month-table td.hours{font-weight:800;color:#17488a;white-space:nowrap}
+.month-table tfoot{font-weight:800;background:#edf4ff}
+.monthly-filters{grid-template-columns:repeat(4,minmax(140px,1fr))}
+@media(max-width:850px){.monthly-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.monthly-filters{grid-template-columns:1fr}}
+.view-navigation{padding:12px 16px}
+.nav-buttons{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nav-buttons .button{font-weight:750}
+@media(max-width:520px){.nav-buttons{display:grid;grid-template-columns:1fr}.nav-buttons .button{width:100%}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="head">
+    <div class="logo">KodeK</div>
+    <div>
+      <div class="title">Calendari tutor</div>
+      <div class="tagline">Consultazione settimanale e riepilogo mensile • formazione e orientamento</div>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+  <nav class="panel view-navigation" aria-label="Seleziona sezione">
+    <div class="nav-buttons">
+      <button type="button" class="button primary" id="openCalendar" aria-pressed="true">Calendario settimanale</button>
+      <button type="button" class="button" id="openMonthly" aria-pressed="false">Riepilogo mensile ore tutor</button>
+    </div>
+  </nav>
+  <div id="calendarSection">
+  <section class="panel">
+    <div class="bar">
+      <div>
+        <h1>Calendario settimanale tutor</h1>
+        <p>Visualizzazione grafica delle assegnazioni per sede, classe e tutor.</p>
+      </div>
+      <div class="controls">
+        <button class="button primary" id="reload" title="Ricarica il JSON da Google Drive">Aggiorna dati da Drive</button>
+      </div>
+    </div>
+    <div id="status" class="notice" role="status">Caricamento automatico del calendario da Google Drive…</div>
+    <div class="filters">
+      <div><label for="sede">Sede</label><select id="sede"><option value="">Tutte le sedi</option></select></div>
+      <div><label for="classe">Classe</label><select id="classe"><option value="">Tutte le classi</option></select></div>
+      <div><label for="tutor">Tutor</label><select id="tutor"><option value="">Tutti i tutor</option></select></div>
+      <div><label for="search">Ricerca rapida</label><input id="search" type="search" placeholder="Cerca sede, classe o tutor…"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="bar">
+      <div class="week">
+        <button class="button" id="prev" aria-label="Settimana precedente">‹ Precedente</button>
+        <strong id="weekLabel">Nessuna settimana</strong>
+        <button class="button" id="next" aria-label="Settimana successiva">Successiva ›</button>
+      </div>
+      <div class="controls">
+        <button class="button" id="all">Mostra tutte le settimane</button>
+        <button class="button" id="today">Settimana corrente</button>
+        <button class="button" id="csv">Esporta CSV filtrato</button>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><span class="num" id="nRows">0</span><span class="lab">Assegnazioni</span></div>
+      <div class="metric"><span class="num" id="nTutors">0</span><span class="lab">Tutor</span></div>
+      <div class="metric"><span class="num" id="nClasses">0</span><span class="lab">Classi</span></div>
+      <div class="metric"><span class="num" id="nSites">0</span><span class="lab">Sedi</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="subbar">
+      <div>
+        <b style="font-size:20px;color:#1e3652">Agenda delle assegnazioni</b>
+        <div class="muted" id="source">Nessun dato caricato</div>
+      </div>
+      <div class="viewtoggle">
+        <button class="button active" id="viewAgenda">Vista agenda</button>
+        <button class="button" id="viewList">Vista elenco</button>
+      </div>
+    </div>
+
+    <div id="agendaPane" class="agenda-wrap">
+      <div id="agenda" class="agenda"></div>
+    </div>
+
+    <div id="listPane" class="hidden">
+      <div id="listView" class="listwrap"></div>
+    </div>
+
+    <div class="empty hidden" id="empty">Caricamento delle assegnazioni da Google Drive…</div>
+  </section>
+
+  </div><!-- fine calendario settimanale -->
+  <section class="panel hidden" id="monthlyPanel">
+    <div class="subbar">
+      <div>
+        <b style="font-size:20px;color:#1e3652">Riepilogo mensile ore tutor</b>
+        <div class="muted">Conteggio degli intervalli orari distinti per tutor e giornata, senza duplicare sovrapposizioni.</div>
+      </div>
+      <div class="controls">
+        <button class="button" id="monthlyCsv">Esporta riepilogo CSV</button>
+        <button class="button" id="monthlyDetailCsv">Esporta dettaglio giornaliero CSV</button>
+      </div>
+    </div>
+    <div class="filters monthly-filters">
+      <div><label for="month">Mese</label><select id="month"><option value="">Tutti i mesi</option></select></div>
+      <div><label for="monthlyTutor">Tutor</label><select id="monthlyTutor"><option value="">Tutti i tutor</option></select></div>
+      <div><label for="monthlySede">Sede</label><select id="monthlySede"><option value="">Tutte le sedi</option></select></div>
+      <div><label for="monthlyClasse">Classe</label><select id="monthlyClasse"><option value="">Tutte le classi</option></select></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><span class="num" id="monthlyHours">0</span><span class="lab">Ore complessive</span></div>
+      <div class="metric"><span class="num" id="monthlyTutors">0</span><span class="lab">Tutor coinvolti</span></div>
+      <div class="metric"><span class="num" id="monthlyDays">0</span><span class="lab">Giornate tutor</span></div>
+      <div class="metric"><span class="num" id="monthlyRecords">0</span><span class="lab">Assegnazioni considerate</span></div>
+    </div>
+    <div class="notice" id="monthlyNotice">Il riepilogo sarà disponibile dopo il caricamento dei calendari.</div>
+    <div class="table-scroll"><table class="month-table" id="monthlyTable">
+      <thead><tr><th>Tutor</th><th>Mese</th><th>Ore</th><th>Giornate</th><th>Assegnazioni</th><th>Sedi</th><th>Classi</th></tr></thead>
+      <tbody id="monthlyBody"></tbody><tfoot id="monthlyFoot"></tfoot>
+    </table></div>
+    <div class="muted" style="margin-top:10px">Le ore sono calcolate dagli orari presenti nel JSON. Le attività che attraversano la mezzanotte vengono attribuite ai rispettivi giorni. Un intervallo non interpretabile viene segnalato e non conteggiato.</div>
+  </section>
+</main>
+
+<footer class="footer">Fonte dati: Google Drive • visualizzazione adattiva per Google Sites</footer>
+
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id), ids=['sede','classe','tutor'];
+function switchSection(section){
+  const monthly=section==='monthly';
+  $('calendarSection').classList.toggle('hidden',monthly);
+  $('monthlyPanel').classList.toggle('hidden',!monthly);
+  for(const [id,active] of [['openCalendar',!monthly],['openMonthly',monthly]]){
+    const btn=$(id);
+    btn.classList.toggle('primary',active);
+    btn.setAttribute('aria-pressed',String(active));
+  }
+  if(monthly)renderMonthly();
+}
+$('openCalendar').addEventListener('click',()=>switchSection('calendar'));
+$('openMonthly').addEventListener('click',()=>switchSection('monthly'));
+
+let rows=[], source='', weekStart=null, showAll=false, currentView='agenda';
+const ONE=86400000;
+const IT_DAY = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxTGKl3SWPgbjigqh4ZrcuT-f7l0woXQP83hSKW7yzsC3znmVOGZCNVxh8O8kyoD66uww/exec';
+let requestNumber=0;
+
+const validDate=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;const d=new Date(s+'T12:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===s?d:null};
+const iso=d=>d.toISOString().slice(0,10);
+const monday=d=>{const x=new Date(d.getTime());x.setUTCDate(x.getUTCDate()-(x.getUTCDay()+6)%7);return iso(x)};
+const addDays=(s,n)=>iso(new Date(validDate(s).getTime()+n*ONE));
+const short=s=>{const d=validDate(s);return d?new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(d):s};
+const dayShort=s=>{const d=validDate(s);return d?new Intl.DateTimeFormat('it-IT',{weekday:'short',day:'2-digit',month:'2-digit',timeZone:'UTC'}).format(d):s};
+const dayNum = s=>{const d=validDate(s);return d?((d.getUTCDay()+6)%7):null};
+const escapeHtml = s => String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const rangeText=(start)=> start ? ('Dal '+short(start)+' al '+short(addDays(start,6))) : 'Nessuna data disponibile';
+function notice(msg,err=false){$('status').textContent=msg;$('status').className='notice'+(err?' error':'')}
+function parse(payload){
+  let list=payload;
+  if(!Array.isArray(list)&&list&&typeof list==='object') list=list.records||list.righe||list.eventi||list.assegnazioni;
+  if(!Array.isArray(list)) throw Error('Formato JSON non valido: è necessario un array di assegnazioni.');
+  const out=list.map((x,i)=>{
+    if(!x||typeof x!=='object') throw Error('Record '+(i+1)+' non valido.');
+    return {sede:String(x.sede??'').trim(),data:String(x.data??'').trim(),classe:String(x.classe??'').trim(),tutor:String(x.tutor??'').trim(),orario:String(x.orario??'').trim()};
+  });
+  out.sort((a,b)=>a.data.localeCompare(b.data)||a.orario.localeCompare(b.orario)||a.sede.localeCompare(b.sede,'it')||a.classe.localeCompare(b.classe,'it')||a.tutor.localeCompare(b.tutor,'it'));
+  rows=out;
+  const dates=out.map(x=>x.data).filter(x=>validDate(x)).sort();
+  const firstDate=dates[0], lastDate=dates.at(-1);
+  const lastMonday=lastDate?monday(validDate(lastDate)):null;
+  source=lastMonday ? ('Dati sino alla settimana dal '+short(lastMonday)+' al '+short(addDays(lastMonday,6))) : 'Nessuna settimana valida disponibile';
+  showAll=false;
+  weekStart=firstDate?monday(validDate(firstDate)):null;
+  ids.forEach(id=>$(id).value='');
+  $('search').value='';
+  populate();
+  render();
+  initMonthly();
+  notice('Caricati '+rows.length+' record • '+source+(rows.some(r=>!validDate(r.data))?' • Attenzione: alcuni record non hanno una data valida.':''));
+}
+function narrowed(except){return rows.filter(r=>ids.every(id=>id===except||!$(id).value||r[id]===$(id).value));}
+function populate(){
+  ids.forEach(id=>{
+    const old=$(id).value;
+    const unique=[...new Set(narrowed(id).map(x=>x[id]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
+    const sel=$(id); sel.replaceChildren();
+    const first=new Option(({sede:'Tutte le sedi',classe:'Tutte le classi',tutor:'Tutti i tutor'})[id],'');
+    sel.add(first); unique.forEach(v=>sel.add(new Option(v,v))); sel.value=unique.includes(old)?old:'';
+  });
+}
+function filtered(){
+  const q=$('search').value.trim().toLocaleLowerCase('it');
+  return rows.filter(r=>ids.every(id=>!$(id).value||r[id]===$(id).value)
+    && (!q || [r.sede,r.classe,r.tutor,r.data,r.orario].some(v=>v.toLocaleLowerCase('it').includes(q)))
+    && (showAll || !weekStart || (r.data>=weekStart && r.data<addDays(weekStart,7)))
+  );
+}
+function renderAgenda(list){
+  const agenda = $('agenda');
+  agenda.replaceChildren();
+  if(showAll){
+    const map=new Map();
+    list.forEach(r=>{ if(!map.has(r.data)) map.set(r.data,[]); map.get(r.data).push(r); });
+    [...map.keys()].sort().forEach(date=>{
+      const idx=dayNum(date);
+      const wrap=document.createElement('div'); wrap.className='daycol';
+      const items=map.get(date);
+      wrap.innerHTML=`<div class="dayhead"><div><div class="daytitle">${idx!=null?IT_DAY[idx]:'Data'}</div><div class="daydate">${escapeHtml(dayShort(date))}</div></div><div class="daycount">${items.length} attività</div></div><div class="daycards"></div>`;
+      const cards=wrap.querySelector('.daycards');
+      items.forEach(r=>cards.appendChild(eventCard(r)));
+      agenda.appendChild(wrap);
+    });
+    return;
+  }
+  if(!weekStart) return;
+  for(let i=0;i<7;i++){
+    const date=addDays(weekStart,i);
+    const items=list.filter(r=>r.data===date);
+    const col=document.createElement('div'); col.className='daycol';
+    col.innerHTML=`<div class="dayhead"><div><div class="daytitle">${IT_DAY[i]}</div><div class="daydate">${escapeHtml(dayShort(date))}</div></div><div class="daycount">${items.length} attività</div></div><div class="daycards"></div>`;
+    const cards=col.querySelector('.daycards');
+    if(items.length) items.forEach(r=>cards.appendChild(eventCard(r)));
+    else cards.innerHTML='<div class="noevents">Nessuna assegnazione</div>';
+    agenda.appendChild(col);
+  }
+}
+function eventCard(r){
+  const card=document.createElement('div');
+  card.className='event';
+  card.innerHTML=`<div class="timepill">${escapeHtml(r.orario||'Orario non indicato')}</div><div class="class">${escapeHtml(r.classe||'Classe non indicata')}</div><div class="meta"><div class="row"><span class="label">Tutor</span><span>${escapeHtml(r.tutor||'Non indicato')}</span></div><div class="row"><span class="label">Sede</span><span>${escapeHtml(r.sede||'Non indicata')}</span></div></div>`;
+  return card;
+}
+function renderList(list){
+  const box=$('listView');
+  box.replaceChildren();
+  const map=new Map();
+  list.forEach(r=>{if(!map.has(r.data)) map.set(r.data,[]); map.get(r.data).push(r);});
+  [...map.keys()].sort().forEach(date=>{
+    const items=map.get(date);
+    const idx=dayNum(date);
+    const section=document.createElement('section'); section.className='daygroup';
+    section.innerHTML=`<div class="daygroup-head"><div class="daygroup-title">${idx!=null?IT_DAY[idx]+' • ':''}${escapeHtml(dayShort(date))}</div><div class="daygroup-count">${items.length} assegnazioni</div></div><div class="cardlist"></div>`;
+    const listNode=section.querySelector('.cardlist');
+    items.forEach(r=>{
+      const card=document.createElement('article'); card.className='listcard';
+      card.innerHTML=`<div class="toprow"><div class="class">${escapeHtml(r.classe||'Classe non indicata')}</div><div class="time">${escapeHtml(r.orario||'Orario non indicato')}</div></div><div class="line"><b>Tutor:</b> ${escapeHtml(r.tutor||'Non indicato')}</div><div class="line"><b>Sede:</b> ${escapeHtml(r.sede||'Non indicata')}</div>`;
+      listNode.appendChild(card);
+    });
+    box.appendChild(section);
+  });
+}
+function render(){
+  const list=filtered();
+  $('empty').classList.toggle('hidden', list.length>0);
+  $('agendaPane').classList.toggle('hidden', currentView!=='agenda' || !list.length);
+  $('listPane').classList.toggle('hidden', currentView!=='list' || !list.length);
+  $('empty').textContent=rows.length ? 'Nessuna assegnazione per i filtri e il periodo selezionati.' : 'Nessuna assegnazione presente nel file JSON.';
+  $('weekLabel').textContent = showAll ? 'Tutte le settimane' : rangeText(weekStart);
+  $('source').textContent = source || 'Nessun dato caricato';
+  $('nRows').textContent = list.length;
+  $('nTutors').textContent = new Set(list.map(r=>r.tutor).filter(Boolean)).size;
+  $('nClasses').textContent = new Set(list.map(r=>r.classe).filter(Boolean)).size;
+  $('nSites').textContent = new Set(list.map(r=>r.sede).filter(Boolean)).size;
+  $('prev').disabled = $('next').disabled = !weekStart || showAll;
+  $('csv').disabled=!list.length;
+  $('all').textContent = showAll ? 'Visualizza una settimana' : 'Mostra tutte le settimane';
+  if(!list.length) return;
+  renderAgenda(list);
+  renderList(list);
+}
+function shift(n){ if(!weekStart) return; weekStart=addDays(weekStart,n*7); showAll=false; render(); }
+function setView(view){
+  currentView=view;
+  $('viewAgenda').classList.toggle('active', view==='agenda');
+  $('viewList').classList.toggle('active', view==='list');
+  render();
+}
+ids.forEach(id=>$(id).addEventListener('change',()=>{populate();render()}));
+$('search').addEventListener('input',render);
+$('prev').onclick=()=>shift(-1);
+$('next').onclick=()=>shift(1);
+$('all').onclick=()=>{showAll=!showAll;render();};
+$('today').onclick=()=>{weekStart=monday(new Date());showAll=false;render();};
+$('viewAgenda').onclick=()=>setView('agenda');
+$('viewList').onclick=()=>setView('list');
+$('reload').onclick=()=>autoLoad();
+$('csv').onclick=()=>{
+  const cells=[['Sede','Data','Classe','Tutor','Orario'],...filtered().map(r=>[r.sede,r.data,r.classe,r.tutor,r.orario])];
+  const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const blob=new Blob(['\uFEFF'+cells.map(r=>r.map(quote).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download='Calendari_Tutor_filtrati.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+// Riepilogo mensile: mantiene i filtri indipendenti dalla navigazione settimanale.
+const MONTH_FIELDS={monthlyTutor:'tutor',monthlySede:'sede',monthlyClasse:'classe'};
+const hourPattern=/(\d{1,2})\s*[:.]\s*(\d{2})/g;
+const monthName=key=>{const d=validDate(key+'-01');return d?new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric',timeZone:'UTC'}).format(d):key};
+const fmtHours=minutes=>(minutes/60).toLocaleString('it-IT',{minimumFractionDigits:0,maximumFractionDigits:2});
+function parseTimeIntervals(value){
+  // Es. 8:00-14:00 / 08.00–10.00 / 08:00 - 09:00, 11:00 - 12:00.
+  const v=String(value||'').replace(/[–—−]/g,'-');
+  const hits=[...v.matchAll(hourPattern)];
+  if(!hits.length || hits.length%2) return null;
+  const result=[];
+  for(let i=0;i<hits.length;i+=2){
+    const h1=+hits[i][1],m1=+hits[i][2],h2=+hits[i+1][1],m2=+hits[i+1][2];
+    if(h1>23||h2>24||m1>59||m2>59||(h2===24&&m2!==0))return null;
+    const between=v.slice(hits[i].index+hits[i][0].length,hits[i+1].index);
+    if(!/^[\s\-aAàÀlLleEoO]+$/.test(between))return null;
+    let start=h1*60+m1,end=h2*60+m2;
+    if(end<=start)end+=1440;
+    if(end-start>1440)return null;
+    result.push([start,end]);
+  }
+  return result;
+}
+function dayOffset(date,offset){return addDays(date,offset)}
+function minuteSegments(r){
+  if(!validDate(r.data)||!r.tutor)return null;
+  const intervals=parseTimeIntervals(r.orario);
+  if(!intervals)return null;
+  const out=[];
+  for(const [a,b] of intervals){
+    for(let d=Math.floor(a/1440);d<=Math.floor((b-1)/1440);d++){
+      out.push({date:dayOffset(r.data,d),start:Math.max(a,d*1440)-d*1440,end:Math.min(b,(d+1)*1440)-d*1440});
+    }
+  }
+  return out;
+}
+function unionMinutes(intervals){
+  const ordered=intervals.slice().sort((a,b)=>a[0]-b[0]);
+  let total=0,begin=-1,end=-1;
+  ordered.forEach(([a,b])=>{if(begin<0){begin=a;end=b}else if(a<=end){end=Math.max(end,b)}else{total+=end-begin;begin=a;end=b}});
+  return total+(begin<0?0:end-begin);
+}
+function monthlySelectedRows(){
+  return rows.filter(r=>Object.entries(MONTH_FIELDS).every(([id,key])=>!$(id).value||$(id).value===r[key]));
+}
+function makeMonthlyData(){
+  const data=monthlySelectedRows(), selectedMonth=$('month').value;
+  const buckets=new Map(), invalid=[];
+  let accepted=0;
+  data.forEach(r=>{
+    const spans=minuteSegments(r);
+    if(!spans){if(!selectedMonth||r.data.slice(0,7)===selectedMonth)invalid.push(r);return}
+    const included=spans.filter(s=>!selectedMonth||s.date.slice(0,7)===selectedMonth);
+    if(!included.length)return;
+    accepted++;
+    included.forEach(s=>{
+      const month=s.date.slice(0,7),key=JSON.stringify([r.tutor,month]);
+      if(!buckets.has(key))buckets.set(key,{tutor:r.tutor,month,days:new Map(),sedi:new Set(),classi:new Set(),records:new Set()});
+      const b=buckets.get(key);
+      if(!b.days.has(s.date))b.days.set(s.date,[]);
+      b.days.get(s.date).push([s.start,s.end]);
+      if(r.sede)b.sedi.add(r.sede);
+      if(r.classe)b.classi.add(r.classe);
+      b.records.add(r);
+    });
+  });
+  const summary=[...buckets.values()].map(b=>({
+    ...b,minutes:[...b.days.values()].reduce((t,x)=>t+unionMinutes(x),0),daysCount:b.days.size,assignments:b.records.size
+  })).sort((a,b)=>a.month.localeCompare(b.month)||a.tutor.localeCompare(b.tutor,'it'));
+  return {summary,invalid,accepted};
+}
+let lastMonthly=null;
+function initMonthly(){
+  const months=new Set(rows.filter(r=>validDate(r.data)).map(r=>r.data.slice(0,7)));
+  // Includi anche il mese successivo per eventuali turni che attraversano la mezzanotte.
+  rows.forEach(r=>{const spans=minuteSegments(r);if(spans)spans.forEach(x=>months.add(x.date.slice(0,7))) });
+  const monthSel=$('month'),old=monthSel.value;
+  monthSel.replaceChildren(new Option('Tutti i mesi',''));
+  [...months].sort().reverse().forEach(m=>monthSel.add(new Option(monthName(m),m)));
+  monthSel.value=months.has(old)?old:([ ...months ].sort().at(-1)||'');
+  for(const [id,key] of Object.entries(MONTH_FIELDS)){
+    const control=$(id),previous=control.value;
+    const first={monthlyTutor:'Tutti i tutor',monthlySede:'Tutte le sedi',monthlyClasse:'Tutte le classi'}[id];
+    const options=[...new Set(rows.map(r=>r[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
+    control.replaceChildren(new Option(first,''));options.forEach(value=>control.add(new Option(value,value)));
+    control.value=options.includes(previous)?previous:'';
+  }
+  renderMonthly();
+}
+function renderMonthly(){
+  lastMonthly=makeMonthlyData();
+  const {summary,invalid,accepted}=lastMonthly;
+  const minutes=summary.reduce((s,r)=>s+r.minutes,0);
+  $('monthlyHours').textContent=fmtHours(minutes);
+  $('monthlyTutors').textContent=new Set(summary.map(x=>x.tutor)).size;
+  $('monthlyDays').textContent=summary.reduce((s,x)=>s+x.daysCount,0);
+  $('monthlyRecords').textContent=accepted;
+  $('monthlyNotice').textContent=(summary.length?'Ore calcolate su '+summary.length+' righe tutor/mese.':'Nessuna attività valida per i filtri selezionati.')+
+      (invalid.length?' Attenzione: '+invalid.length+' assegnazioni con tutor, data o orario mancante/non interpretabile sono escluse dal conteggio.':'')+
+      ' Le sovrapposizioni dello stesso tutor nella stessa giornata non sono sommate due volte.';
+  $('monthlyNotice').className='notice'+(invalid.length?' error':'');
+  $('monthlyBody').replaceChildren();
+  for(const x of summary){
+    const tr=document.createElement('tr');
+    [x.tutor,monthName(x.month),fmtHours(x.minutes),String(x.daysCount),String(x.assignments),[...x.sedi].sort().join(', '),[...x.classi].sort().join(', ')].forEach((v,i)=>{
+      const td=document.createElement('td');td.textContent=v;if(i===2)td.className='hours';tr.appendChild(td)
+    });$('monthlyBody').appendChild(tr);
+  }
+  $('monthlyFoot').replaceChildren();
+  if(summary.length){
+    const tr=document.createElement('tr');
+    ['TOTALE','',fmtHours(minutes),String(summary.reduce((s,x)=>s+x.daysCount,0)),String(accepted),'',''].forEach(t=>{const td=document.createElement('td');td.textContent=t;tr.appendChild(td)});
+    $('monthlyFoot').appendChild(tr);
+  }
+  $('monthlyCsv').disabled=$('monthlyDetailCsv').disabled=!summary.length;
+}
+function csvDownload(name,header,body){
+  const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const content='\uFEFF'+[header,...body].map(r=>r.map(quote).join(';')).join('\r\n');
+  const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$('month').addEventListener('change',renderMonthly);
+Object.keys(MONTH_FIELDS).forEach(id=>$(id).addEventListener('change',renderMonthly));
+$('monthlyCsv').onclick=()=>{
+  const summary=lastMonthly?.summary||[];
+  csvDownload('KodeK_riepilogo_mensile_tutor.csv',['Tutor','Mese','Ore','Giornate','Assegnazioni','Sedi','Classi'],summary.map(x=>[x.tutor,x.month,fmtHours(x.minutes),x.daysCount,x.assignments,[...x.sedi].join(' / '),[...x.classi].join(' / ')]));
+};
+$('monthlyDetailCsv').onclick=()=>{
+  const summary=lastMonthly?.summary||[], details=[];
+  summary.forEach(x=>[...x.days].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,intervals])=>{
+    details.push([x.tutor,date,x.month,fmtHours(unionMinutes(intervals))]);
+  }));
+  csvDownload('KodeK_dettaglio_giornaliero_tutor.csv',['Tutor','Data','Mese','Ore'],details);
+};
+
+function autoLoad(){
+  const button=$('reload');
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(APPS_SCRIPT_URL)){
+    notice('Configurazione necessaria: inserisci un URL /exec valido nella costante APPS_SCRIPT_URL del file HTML.',true); return;
+  }
+  const seq=++requestNumber;
+  button.disabled=true;
+  notice('Lettura dei calendari da Google Drive…');
+  const callback='kodekDriveCallback_'+seq;
+  const tag=document.createElement('script');
+  let finished=false;
+  const finish=(err,payload)=>{
+    if(finished) return; finished=true;
+    clearTimeout(timeout); tag.remove(); delete window[callback]; button.disabled=false;
+    if(err){console.error('Caricamento tramite Apps Script:',err);notice('Impossibile caricare il JSON: '+err.message,true);return;}
+    if(payload&&payload.error){notice('Errore di Google Apps Script: '+payload.error,true);return;}
+    try{parse(payload)}catch(e){notice('JSON non valido: '+e.message,true)}
+  };
+  const timeout=setTimeout(()=>finish(new Error('Tempo massimo superato. Controlla l’URL /exec e che la distribuzione sia accessibile a chiunque.')),20000);
+  window[callback]=data=>finish(null,data);
+  tag.onerror=()=>finish(new Error('Endpoint non raggiungibile o distribuzione non pubblica.'));
+  const separator=APPS_SCRIPT_URL.includes('?')?'&':'?';
+  tag.src=APPS_SCRIPT_URL+separator+'callback='+encodeURIComponent(callback)+'&_='+Date.now();
+  document.head.appendChild(tag);
+}
+autoLoad();
+})();
+</script>
+</body>
+</html>
