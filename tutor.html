@@ -43,6 +43,8 @@ select,input[type=search]{width:100%;font:inherit;border:1px solid #cad6e5;borde
 .error{border-left-color:#c13a3a;background:#fff0f0;color:#862e2e}
 .week{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .week strong{min-width:290px;text-align:center;font-size:18px;color:#1f3f6a}
+.week label{margin:0;white-space:nowrap}
+.week select{width:auto;min-width:290px}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin-top:16px}
 .metric{background:linear-gradient(180deg,#f6f9ff,#eef4ff);border:1px solid #dce7fb;border-radius:14px;padding:14px 15px}
 .metric .num{display:block;font-size:24px;font-weight:800;color:#17488a;line-height:1}
@@ -99,6 +101,7 @@ select,input[type=search]{width:100%;font:inherit;border:1px solid #cad6e5;borde
   .metrics{grid-template-columns:1fr 1fr}
   .agenda{grid-template-columns:1fr}
   .week strong{min-width:0;text-align:left}
+  .week select{width:100%;min-width:0}
 }
 @media(max-width:480px){
   .metrics{grid-template-columns:1fr 1fr}
@@ -175,12 +178,10 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
   <section class="panel">
     <div class="bar">
       <div class="week">
-        <button class="button" id="prev" aria-label="Settimana precedente">‹ Precedente</button>
-        <strong id="weekLabel">Nessuna settimana</strong>
-        <button class="button" id="next" aria-label="Settimana successiva">Successiva ›</button>
+        <label for="weekSelect">Settimana</label>
+        <select id="weekSelect" aria-label="Seleziona la settimana"><option value="">Nessuna settimana</option></select>
       </div>
       <div class="controls">
-        <button class="button" id="all">Mostra tutte le settimane</button>
         <button class="button" id="today">Settimana corrente</button>
         <button class="button" id="csv">Esporta CSV filtrato</button>
       </div>
@@ -268,7 +269,7 @@ function switchSection(section){
 $('openCalendar').addEventListener('click',()=>switchSection('calendar'));
 $('openMonthly').addEventListener('click',()=>switchSection('monthly'));
 
-let rows=[], source='', weekStart=null, showAll=false, currentView='agenda';
+let rows=[], source='', weekStart=null, currentView='agenda';
 const ONE=86400000;
 const IT_DAY = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
 const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxTGKl3SWPgbjigqh4ZrcuT-f7l0woXQP83hSKW7yzsC3znmVOGZCNVxh8O8kyoD66uww/exec';
@@ -283,6 +284,17 @@ const dayShort=s=>{const d=validDate(s);return d?new Intl.DateTimeFormat('it-IT'
 const dayNum = s=>{const d=validDate(s);return d?((d.getUTCDay()+6)%7):null};
 const escapeHtml = s => String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const rangeText=(start)=> start ? ('Dal '+short(start)+' al '+short(addDays(start,6))) : 'Nessuna data disponibile';
+function populateWeeks(preferred){
+  const weeks=[...new Set(rows.map(r=>validDate(r.data)?monday(validDate(r.data)):null).filter(Boolean))].sort();
+  const select=$('weekSelect');
+  select.replaceChildren();
+  weeks.forEach(w=>select.add(new Option(rangeText(w),w)));
+  const current=monday(new Date());
+  const fallback=weeks.filter(w=>w<=current).at(-1)||weeks[0]||'';
+  weekStart=preferred ? (weeks.includes(preferred)?preferred:fallback) : (weeks.includes(weekStart)?weekStart:fallback);
+  select.value=weekStart||'';
+  if(!weeks.length)select.add(new Option('Nessuna settimana',''));
+}
 function notice(msg,err=false){$('status').textContent=msg;$('status').className='notice'+(err?' error':'')}
 function parse(payload){
   let list=payload;
@@ -298,10 +310,10 @@ function parse(payload){
   const firstDate=dates[0], lastDate=dates.at(-1);
   const lastMonday=lastDate?monday(validDate(lastDate)):null;
   source=lastMonday ? ('Dati sino alla settimana dal '+short(lastMonday)+' al '+short(addDays(lastMonday,6))) : 'Nessuna settimana valida disponibile';
-  showAll=false;
   weekStart=firstDate?monday(validDate(firstDate)):null;
   ids.forEach(id=>$(id).value='');
   $('search').value='';
+  populateWeeks(monday(new Date()));
   populate();
   render();
   initMonthly();
@@ -321,26 +333,12 @@ function filtered(){
   const q=$('search').value.trim().toLocaleLowerCase('it');
   return rows.filter(r=>ids.every(id=>!$(id).value||r[id]===$(id).value)
     && (!q || [r.sede,r.classe,r.tutor,r.data,r.orario].some(v=>v.toLocaleLowerCase('it').includes(q)))
-    && (showAll || !weekStart || (r.data>=weekStart && r.data<addDays(weekStart,7)))
+    && Boolean(weekStart) && r.data>=weekStart && r.data<addDays(weekStart,7)
   );
 }
 function renderAgenda(list){
   const agenda = $('agenda');
   agenda.replaceChildren();
-  if(showAll){
-    const map=new Map();
-    list.forEach(r=>{ if(!map.has(r.data)) map.set(r.data,[]); map.get(r.data).push(r); });
-    [...map.keys()].sort().forEach(date=>{
-      const idx=dayNum(date);
-      const wrap=document.createElement('div'); wrap.className='daycol';
-      const items=map.get(date);
-      wrap.innerHTML=`<div class="dayhead"><div><div class="daytitle">${idx!=null?IT_DAY[idx]:'Data'}</div><div class="daydate">${escapeHtml(dayShort(date))}</div></div><div class="daycount">${items.length} attività</div></div><div class="daycards"></div>`;
-      const cards=wrap.querySelector('.daycards');
-      items.forEach(r=>cards.appendChild(eventCard(r)));
-      agenda.appendChild(wrap);
-    });
-    return;
-  }
   if(!weekStart) return;
   for(let i=0;i<7;i++){
     const date=addDays(weekStart,i);
@@ -384,20 +382,16 @@ function render(){
   $('agendaPane').classList.toggle('hidden', currentView!=='agenda' || !list.length);
   $('listPane').classList.toggle('hidden', currentView!=='list' || !list.length);
   $('empty').textContent=rows.length ? 'Nessuna assegnazione per i filtri e il periodo selezionati.' : 'Nessuna assegnazione presente nel file JSON.';
-  $('weekLabel').textContent = showAll ? 'Tutte le settimane' : rangeText(weekStart);
   $('source').textContent = source || 'Nessun dato caricato';
   $('nRows').textContent = list.length;
   $('nTutors').textContent = new Set(list.map(r=>r.tutor).filter(Boolean)).size;
   $('nClasses').textContent = new Set(list.map(r=>r.classe).filter(Boolean)).size;
   $('nSites').textContent = new Set(list.map(r=>r.sede).filter(Boolean)).size;
-  $('prev').disabled = $('next').disabled = !weekStart || showAll;
   $('csv').disabled=!list.length;
-  $('all').textContent = showAll ? 'Visualizza una settimana' : 'Mostra tutte le settimane';
   if(!list.length) return;
   renderAgenda(list);
   renderList(list);
 }
-function shift(n){ if(!weekStart) return; weekStart=addDays(weekStart,n*7); showAll=false; render(); }
 function setView(view){
   currentView=view;
   $('viewAgenda').classList.toggle('active', view==='agenda');
@@ -406,10 +400,8 @@ function setView(view){
 }
 ids.forEach(id=>$(id).addEventListener('change',()=>{populate();render()}));
 $('search').addEventListener('input',render);
-$('prev').onclick=()=>shift(-1);
-$('next').onclick=()=>shift(1);
-$('all').onclick=()=>{showAll=!showAll;render();};
-$('today').onclick=()=>{weekStart=monday(new Date());showAll=false;render();};
+$('weekSelect').addEventListener('change',()=>{weekStart=$('weekSelect').value||null;render();});
+$('today').onclick=()=>{populateWeeks(monday(new Date()));render();};
 $('viewAgenda').onclick=()=>setView('agenda');
 $('viewList').onclick=()=>setView('list');
 $('reload').onclick=()=>autoLoad();
