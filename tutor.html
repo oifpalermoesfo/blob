@@ -135,9 +135,24 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .nav-buttons{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .nav-buttons .button{font-weight:750}
 @media(max-width:520px){.nav-buttons{display:grid;grid-template-columns:1fr}.nav-buttons .button{width:100%}}
+.auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#eef3f9,#f8fbff)}
+.auth-card{width:min(420px,100%);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:28px}
+.auth-card h1{font-size:25px;color:var(--blue);margin-bottom:8px}.auth-card label{margin-top:14px}
+.auth-card input{width:100%;font:inherit;border:1px solid #cad6e5;border-radius:10px;padding:11px 12px}
+.auth-error{color:#862e2e;background:#fff0f0;border-left:4px solid #c13a3a;border-radius:8px;padding:10px 12px;margin-top:14px;font-size:13px}
 </style>
 </head>
 <body>
+<section id="authScreen" class="auth-screen">
+  <form id="loginForm" class="auth-card">
+    <h1>Calendari tutor</h1><p>Accedi per consultare le assegnazioni tutor.</p>
+    <label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" required>
+    <label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required>
+    <button class="button primary" id="loginButton" type="submit" style="width:100%;margin-top:18px">Accedi</button>
+    <div id="loginError" class="auth-error hidden" role="alert"></div>
+  </form>
+</section>
+<div id="appShell" hidden>
 <header class="top">
   <div class="head">
     <div class="logo">KodeK</div>
@@ -252,6 +267,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 
 <footer class="footer">Fonte dati: Google Drive • visualizzazione adattiva per Google Sites</footer>
 
+</div>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id), ids=['sede','classe','tutor'];
@@ -272,8 +288,20 @@ $('openMonthly').addEventListener('click',()=>switchSection('monthly'));
 let rows=[], source='', weekStart=null, currentView='agenda';
 const ONE=86400000;
 const IT_DAY = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxTGKl3SWPgbjigqh4ZrcuT-f7l0woXQP83hSKW7yzsC3znmVOGZCNVxh8O8kyoD66uww/exec';
-let requestNumber=0;
+const SUPABASE_URL='https://mmfxfgxaqbergrxrvqjf.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Pv9OAEUm8E6QhMdM72CuzQ_ji7WzVX5';
+const SESSION_KEY='esfo_supabase_session_v1';
+let session=null,requestNumber=0;
+const apiHeaders=token=>({apikey:SUPABASE_PUBLISHABLE_KEY,...(token?{Authorization:'Bearer '+token}:{})});
+const configReady=()=>SUPABASE_PUBLISHABLE_KEY.startsWith('sb_publishable_');
+const loginMessage=message=>{$('loginError').textContent=message;$('loginError').classList.toggle('hidden',!message)};
+const saveSession=data=>{session=data;sessionStorage.setItem(SESSION_KEY,JSON.stringify(data))};
+const clearSession=()=>{session=null;sessionStorage.removeItem(SESSION_KEY)};
+const showLogin=message=>{$('appShell').hidden=true;$('authScreen').classList.remove('hidden');loginMessage(message||'');$('loginPassword').value=''};
+const showApp=()=>{$('authScreen').classList.add('hidden');$('appShell').hidden=false;loginMessage('')};
+async function authRequest(grant,body){const res=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{...apiHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});const result=await res.json().catch(()=>({}));if(!res.ok)throw Error(result.error_description||result.msg||result.message||'Credenziali non valide');return result}
+async function token(){if(!session)throw Error('Sessione non disponibile');if(session.expires_at>Date.now()/1000+30)return session.access_token;const result=await authRequest('refresh_token',{refresh_token:session.refresh_token});saveSession({...result,expires_at:Math.floor(Date.now()/1000)+(result.expires_in||3600)});return session.access_token}
+document.getElementById('loginForm').addEventListener('submit',async event=>{event.preventDefault();loginMessage('');const button=$('loginButton');button.disabled=true;try{const auth=await authRequest('password',{email:$('loginEmail').value.trim(),password:$('loginPassword').value});saveSession({...auth,expires_at:Math.floor(Date.now()/1000)+(auth.expires_in||3600)});showApp();await autoLoad()}catch(error){loginMessage('Accesso non riuscito: '+error.message)}finally{button.disabled=false}});
 
 const validDate=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;const d=new Date(s+'T12:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===s?d:null};
 const iso=d=>d.toISOString().slice(0,10);
@@ -547,7 +575,7 @@ $('monthlyDetailCsv').onclick=()=>{
   csvDownload('KodeK_dettaglio_giornaliero_tutor.csv',['Tutor','Data','Mese','Ore'],details);
 };
 
-function autoLoad(){
+function legacyDriveAutoLoad(){
   const button=$('reload');
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(APPS_SCRIPT_URL)){
     notice('Configurazione necessaria: inserisci un URL /exec valido nella costante APPS_SCRIPT_URL del file HTML.',true); return;
@@ -572,7 +600,26 @@ function autoLoad(){
   tag.src=APPS_SCRIPT_URL+separator+'callback='+encodeURIComponent(callback)+'&_='+Date.now();
   document.head.appendChild(tag);
 }
-autoLoad();
+async function autoLoad(){
+  const button=$('reload');
+  if(!configReady()){notice('Configurazione Supabase mancante.',true);return}
+  ++requestNumber;button.disabled=true;notice('Lettura degli orari tutor da Supabase…');
+  try{
+    const jwt=await token();
+    const response=await fetch(SUPABASE_URL+'/rest/v1/orari_tutor?id=eq.1&select=dati,aggiornato_il',{headers:{...apiHeaders(jwt),Accept:'application/json'},cache:'no-store'});
+    if(response.status===401){clearSession();showLogin('Sessione non valida. Accedi nuovamente.');return}
+    if(!response.ok)throw Error('Lettura Supabase non riuscita (HTTP '+response.status+')');
+    const records=await response.json();
+    if(!Array.isArray(records)||!records.length)throw Error('Archivio tutor vuoto o non autorizzato.');
+    parse(records[0].dati);
+    const updated=records[0].aggiornato_il?new Date(records[0].aggiornato_il):null;
+    const label=updated&&!Number.isNaN(updated.getTime())?' · aggiornato il '+new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Rome'}).format(updated):'';
+    notice(rows.length.toLocaleString('it-IT')+' assegnazioni caricate'+label);
+  }catch(error){console.error('Caricamento tutor:',error);notice('Impossibile caricare il JSON tutor: '+error.message,true)}finally{button.disabled=false}
+}
+document.getElementById('reload').addEventListener('click',autoLoad);
+try{session=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch(_){clearSession()}
+if(session?.access_token){showApp();autoLoad()}
 })();
 </script>
 </body>

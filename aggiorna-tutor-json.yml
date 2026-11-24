@@ -1,0 +1,32 @@
+name: Aggiorna tutor su Supabase
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+      timezone: 'Europe/Rome'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aggiorna-tutor-supabase
+  cancel-in-progress: false
+
+jobs:
+  aggiorna-tutor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v6
+      - name: Configura Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Importa Google Sheets tutor in Supabase
+        env:
+          GOOGLE_TUTOR_SHEET_CSV_URL: ${{ vars.GOOGLE_TUTOR_SHEET_CSV_URL || 'https://docs.google.com/spreadsheets/d/1m3asIPCcxRMFECeXrFbzUYw5EDI2v05wKpoCARH_bjE/export?format=csv&gid=0' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python esporta_tutor_json.py
